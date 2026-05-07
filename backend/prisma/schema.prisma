@@ -1,0 +1,52 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  passwordHash String
+  role         String   @default("admin")
+  noWa         String?
+  email        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model TargetOpsen {
+  id            Int      @id @default(autoincrement())
+  jenisOpsen    String   // "PKB" or "BBNKB"
+  tahun         Int
+  triwulan      Int      // 1, 2, 3, 4
+  targetRupiah  Decimal  @db.Decimal(15, 2)
+  createdAt     DateTime @default(now())
+}
+
+model RealisasiOpsen {
+  id              Int      @id @default(autoincrement())
+  kecamatan       String
+  desaKelurahan   String
+  tahun           Int
+  bulan           String
+  pkbPokok        Decimal  @db.Decimal(15, 2)
+  opsenPkb        Decimal  @db.Decimal(15, 2)
+  bbnkbPokok      Decimal  @db.Decimal(15, 2)
+  opsenBbnkb      Decimal  @db.Decimal(15, 2)
+  totalOpsen      Decimal  @db.Decimal(15, 2)
+  createdAt       DateTime @default(now())
+}
+
+model Kegiatan {
+  id               Int      @id @default(autoincrement())
+  jenisKegiatan    String
+  targetJumlah     Int
+  realisasiJumlah  Int
+  tahun            Int
+  bulan            String
+  createdAt        DateTime @default(now())
+}

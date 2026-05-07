@@ -1,0 +1,77 @@
+import cron from 'node-cron';
+import { PrismaClient } from '@prisma/client';
+import { sendWhatsAppAlert, sendEmailAlert } from './notificationService.js';
+
+const prisma = new PrismaClient();
+
+const evaluateTargets = async () => {
+  console.log('[CRON] Mengevaluasi target capaian...');
+  try {
+    const currentYear = new Date().getFullYear();
+    const startOfYear = new Date(currentYear, 0, 1);
+    const today = new Date();
+    const diffTime = Math.abs(today - startOfYear);
+    const dayOfYear = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    // Asumsi linear growth
+    const expectedRatio = dayOfYear / 365;
+
+    // Hitung total realisasi PKB & BBNKB
+    const aggregateRealisasi = await prisma.realisasiOpsen.aggregate({
+      _sum: { opsenPkb: true, opsenBbnkb: true }
+    });
+    const realisasiPKB = Number(aggregateRealisasi._sum.opsenPkb || 0);
+    const realisasiBBNKB = Number(aggregateRealisasi._sum.opsenBbnkb || 0);
+    const realisasiTotal = realisasiPKB + realisasiBBNKB;
+
+    // Ambil Target dari DB
+    const targetPKBResult = await prisma.targetOpsen.aggregate({ _sum: { targetRupiah: true }, where: { jenisOpsen: 'PKB', tahun: currentYear } });
+    const targetBBNKBResult = await prisma.targetOpsen.aggregate({ _sum: { targetRupiah: true }, where: { jenisOpsen: 'BBNKB', tahun: currentYear } });
+    
+    const targetPKB = Number(targetPKBResult._sum.targetRupiah || 0);
+    const targetBBNKB = Number(targetBBNKBResult._sum.targetRupiah || 0);
+    const targetTotal = targetPKB + targetBBNKB;
+
+    const expectedRealisasi = targetTotal * expectedRatio;
+
+    if (realisasiTotal < expectedRealisasi) {
+      const formatRp = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(num);
+      
+      const message = `*SIMPONI ALERT - Evaluasi Akhir Pekan*\n\n` +
+        `Yth. Bapak/Ibu,\n\n` +
+        `Sistem mendeteksi bahwa *Realisasi Total Opsen* saat ini belum memenuhi ambang batas *Pro-Rata* yang diharapkan hingga hari ini.\n\n` +
+        `- *Ekspektasi Pro-Rata (Hari ke-${dayOfYear})*: ${formatRp(expectedRealisasi)}\n` +
+        `- *Realisasi Aktual*: ${formatRp(realisasiTotal)}\n` +
+        `- *Selisih/Kekurangan*: ${formatRp(expectedRealisasi - realisasiTotal)}\n\n` +
+        `Mohon segera ditindaklanjuti untuk strategi minggu depan.\nTerima kasih.`;
+      
+      const usersToAlert = await prisma.user.findMany({
+        where: { role: { in: ['admin', 'kadin'] } }
+      });
+
+      for (const user of usersToAlert) {
+        // Fallback to dummy data if DB empty
+        const waNumber = user.noWa || '088991360201'; 
+        const emailAddress = user.email || 'kadin@magetan.go.id';
+
+        await sendWhatsAppAlert(waNumber, message);
+        await sendEmailAlert(emailAddress, 'Peringatan Target Evaluasi SIMPONI', message);
+      }
+    } else {
+      console.log('[CRON] Evaluasi aman, target terpenuhi.');
+    }
+  } catch (error) {
+    console.error('[CRON] Error evaluating targets:', error);
+  }
+};
+
+export const startCronJobs = () => {
+  // Jadwal standar: Setiap hari Sabtu jam 08:00 Pagi
+  cron.schedule('0 8 * * 6', () => {
+    evaluateTargets();
+  });
+  console.log('[CRON] Penjadwalan Evaluasi Target (Sabtu 08:00) aktif.');
+};
+
+// Export juga fungsi manual trigger untuk kebutuhan testing
+export { evaluateTargets };
