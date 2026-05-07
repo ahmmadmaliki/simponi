@@ -45,8 +45,9 @@ const evaluateTargets = async () => {
         `- *Selisih/Kekurangan*: ${formatRp(expectedRealisasi - realisasiTotal)}\n\n` +
         `Mohon segera ditindaklanjuti untuk strategi minggu depan.\nTerima kasih.`;
       
+      // Notify ALL users who have receiveNotif = true
       const usersToAlert = await prisma.user.findMany({
-        where: { role: { in: ['admin', 'kadin'] } }
+        where: { receiveNotif: true }
       });
 
       for (const user of usersToAlert) {

@@ -82,7 +82,7 @@ export default function MainLayout() {
               <span className="text-[14px] text-slate-500">Online</span>
             </div>
             <div className="h-12 w-12 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-xl uppercase">
-               {userRole ? userRole.substring(0, 2) : 'U'}
+              {userRole ? userRole.substring(0, 2) : 'U'}
             </div>
           </div>
         </header>

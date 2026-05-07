@@ -23,6 +23,7 @@ export default function UserManagement() {
     role: 'staff',
     noWa: '',
     email: '',
+    receiveNotif: true,
   });
 
   const createMutation = useMutation({
@@ -84,6 +85,7 @@ export default function UserManagement() {
         role: user.role,
         noWa: user.noWa || '',
         email: user.email || '',
+        receiveNotif: user.receiveNotif ?? true,
       });
     } else {
       setEditingUser(null);
@@ -93,6 +95,7 @@ export default function UserManagement() {
         role: 'staff',
         noWa: '',
         email: '',
+        receiveNotif: true,
       });
     }
     setIsModalOpen(true);
@@ -115,6 +118,17 @@ export default function UserManagement() {
     if (window.confirm(`Apakah Anda yakin ingin menghapus user ${username}?`)) {
       deleteMutation.mutate(id);
     }
+  };
+
+  const handleToggleNotif = (user) => {
+    updateMutation.mutate({
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      noWa: user.noWa,
+      email: user.email,
+      receiveNotif: !user.receiveNotif
+    });
   };
 
   return (
@@ -142,6 +156,7 @@ export default function UserManagement() {
                 <th className="px-6 py-4">Role</th>
                 <th className="px-6 py-4">WhatsApp</th>
                 <th className="px-6 py-4">Email</th>
+                <th className="px-6 py-4 text-center">Notifikasi</th>
                 <th className="px-6 py-4 text-center">Aksi</th>
               </tr>
             </thead>
@@ -165,6 +180,14 @@ export default function UserManagement() {
                     </td>
                     <td className="px-6 py-4 text-slate-600">{user.noWa || '-'}</td>
                     <td className="px-6 py-4 text-slate-600">{user.email || '-'}</td>
+                    <td className="px-6 py-4 text-center">
+                      <button 
+                        onClick={() => handleToggleNotif(user)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${user.receiveNotif ? 'bg-primary-600' : 'bg-slate-200'}`}
+                      >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${user.receiveNotif ? 'translate-x-6' : 'translate-x-1'}`} />
+                      </button>
+                    </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex justify-center gap-3">
                         <button 
@@ -266,6 +289,17 @@ export default function UserManagement() {
                   className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all"
                   placeholder="kadin@magetan.go.id"
                 />
+              </div>
+
+              <div className="flex items-center gap-3 py-2">
+                <button
+                  type="button"
+                  onClick={() => setFormData({...formData, receiveNotif: !formData.receiveNotif})}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${formData.receiveNotif ? 'bg-primary-600' : 'bg-slate-200'}`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.receiveNotif ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+                <span className="text-sm font-medium text-slate-700">Terima Peringatan WA & Email</span>
               </div>
 
               <div className="pt-4 flex gap-3">

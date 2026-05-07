@@ -190,7 +190,7 @@ app.get('/api/test-notification', async (req, res) => {
 app.get('/api/users', async (req, res) => {
   try {
     const users = await prisma.user.findMany({
-      select: { id: true, username: true, role: true, noWa: true, email: true, createdAt: true }
+      select: { id: true, username: true, role: true, noWa: true, email: true, receiveNotif: true, createdAt: true }
     });
     res.json(users);
   } catch (error) {
@@ -200,7 +200,7 @@ app.get('/api/users', async (req, res) => {
 
 app.post('/api/users', async (req, res) => {
   try {
-    const { username, password, role, noWa, email } = req.body;
+    const { username, password, role, noWa, email, receiveNotif } = req.body;
     
     const existingUser = await prisma.user.findUnique({ where: { username } });
     if (existingUser) {
@@ -214,9 +214,10 @@ app.post('/api/users', async (req, res) => {
         passwordHash,
         role: role || 'staff',
         noWa: noWa || null,
-        email: email || null
+        email: email || null,
+        receiveNotif: receiveNotif !== undefined ? receiveNotif : true
       },
-      select: { id: true, username: true, role: true, noWa: true, email: true }
+      select: { id: true, username: true, role: true, noWa: true, email: true, receiveNotif: true }
     });
     res.json(newUser);
   } catch (error) {
@@ -227,7 +228,7 @@ app.post('/api/users', async (req, res) => {
 app.put('/api/users/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { username, password, role, noWa, email } = req.body;
+    const { username, password, role, noWa, email, receiveNotif } = req.body;
 
     const dataToUpdate = {
       username,
@@ -236,6 +237,10 @@ app.put('/api/users/:id', async (req, res) => {
       email: email || null
     };
 
+    if (receiveNotif !== undefined) {
+      dataToUpdate.receiveNotif = receiveNotif;
+    }
+
     if (password && password.trim() !== '') {
       dataToUpdate.passwordHash = await bcrypt.hash(password, 10);
     }
@@ -243,7 +248,7 @@ app.put('/api/users/:id', async (req, res) => {
     const updatedUser = await prisma.user.update({
       where: { id: parseInt(id) },
       data: dataToUpdate,
-      select: { id: true, username: true, role: true, noWa: true, email: true }
+      select: { id: true, username: true, role: true, noWa: true, email: true, receiveNotif: true }
     });
     res.json(updatedUser);
   } catch (error) {

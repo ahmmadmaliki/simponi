@@ -14,6 +14,7 @@ model User {
   role         String   @default("admin")
   noWa         String?
   email        String?
+  receiveNotif Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
