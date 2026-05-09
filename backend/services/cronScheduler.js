@@ -51,12 +51,13 @@ const evaluateTargets = async () => {
       });
 
       for (const user of usersToAlert) {
-        // Fallback to dummy data if DB empty
-        const waNumber = user.noWa || '088991360201'; 
-        const emailAddress = user.email || 'kadin@magetan.go.id';
-
-        await sendWhatsAppAlert(waNumber, message);
-        await sendEmailAlert(emailAddress, 'Peringatan Target Evaluasi SIMPONI', message);
+        if (user.noWa) {
+          await sendWhatsAppAlert(user.noWa, message);
+        }
+        
+        if (user.email) {
+          await sendEmailAlert(user.email, 'Peringatan Target Evaluasi SIMPONI', message);
+        }
       }
     } else {
       console.log('[CRON] Evaluasi aman, target terpenuhi.');
