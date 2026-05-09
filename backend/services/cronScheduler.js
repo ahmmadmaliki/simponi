@@ -66,12 +66,29 @@ const evaluateTargets = async () => {
   }
 };
 
-export const startCronJobs = () => {
-  // Jadwal standar: Setiap hari Sabtu jam 08:00 Pagi
-  cron.schedule('0 8 * * 6', () => {
-    evaluateTargets();
-  });
-  console.log('[CRON] Penjadwalan Evaluasi Target (Sabtu 08:00) aktif.');
+let currentJob = null;
+
+export const startCronJobs = async () => {
+  try {
+    const setting = await prisma.notificationSetting.upsert({
+      where: { id: 1 },
+      update: {},
+      create: { id: 1, frequency: 'weekly', dayOfWeek: 6, dateOfMonth: 1, time: '08:00', cronString: '0 8 * * 6' }
+    });
+
+    if (currentJob) {
+      currentJob.stop();
+      console.log('[CRON] Jadwal lama dihentikan.');
+    }
+
+    currentJob = cron.schedule(setting.cronString, () => {
+      evaluateTargets();
+    });
+    
+    console.log(`[CRON] Penjadwalan Evaluasi Target aktif. Cron: ${setting.cronString} (${setting.frequency})`);
+  } catch (err) {
+    console.error('[CRON] Gagal menginisialisasi jadwal:', err);
+  }
 };
 
 // Export juga fungsi manual trigger untuk kebutuhan testing

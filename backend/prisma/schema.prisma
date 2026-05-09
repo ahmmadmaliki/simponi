@@ -51,3 +51,13 @@ model Kegiatan {
   bulan            String
   createdAt        DateTime @default(now())
 }
+
+model NotificationSetting {
+  id          Int      @id @default(1)
+  frequency   String   @default("weekly")
+  dayOfWeek   Int      @default(6)
+  dateOfMonth Int      @default(1)
+  time        String   @default("08:00")
+  cronString  String   @default("0 8 * * 6")
+  updatedAt   DateTime @updatedAt
+}

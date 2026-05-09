@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Edit2, Trash2, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Clock } from 'lucide-react';
 
 const fetchUsers = async () => {
   const res = await fetch('http://localhost:5000/api/users');
@@ -25,6 +25,55 @@ export default function UserManagement() {
     email: '',
     receiveNotif: true,
   });
+
+  const { data: setting, isLoading: isSettingLoading } = useQuery({
+    queryKey: ['notificationSetting'],
+    queryFn: async () => {
+      const res = await fetch('http://localhost:5000/api/settings/notification');
+      if (!res.ok) throw new Error('Gagal memuat setting');
+      return res.json();
+    }
+  });
+
+  const [settingForm, setSettingForm] = useState({
+    frequency: 'weekly',
+    dayOfWeek: 6,
+    dateOfMonth: 1,
+    time: '08:00'
+  });
+
+  useEffect(() => {
+    if (setting) {
+      setSettingForm({
+        frequency: setting.frequency,
+        dayOfWeek: setting.dayOfWeek,
+        dateOfMonth: setting.dateOfMonth,
+        time: setting.time
+      });
+    }
+  }, [setting]);
+
+  const updateSettingMutation = useMutation({
+    mutationFn: async (newSetting) => {
+      const res = await fetch('http://localhost:5000/api/settings/notification', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSetting)
+      });
+      if (!res.ok) throw new Error('Gagal menyimpan setting');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['notificationSetting']);
+      alert('Jadwal Peringatan Berhasil Diperbarui!');
+    },
+    onError: (err) => alert(err.message)
+  });
+
+  const handleSaveSetting = (e) => {
+    e.preventDefault();
+    updateSettingMutation.mutate(settingForm);
+  };
 
   const createMutation = useMutation({
     mutationFn: async (newData) => {
@@ -145,6 +194,83 @@ export default function UserManagement() {
           <Plus size={20} />
           Tambah User
         </button>
+      </div>
+
+      {/* Panel Pengaturan Jadwal */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <Clock size={20} className="text-primary-600" />
+          Pengaturan Jadwal Peringatan Otomatis
+        </h2>
+        {isSettingLoading ? (
+          <p className="text-slate-500">Memuat pengaturan...</p>
+        ) : (
+          <form onSubmit={handleSaveSetting} className="flex flex-col md:flex-row gap-4 items-end">
+            <div className="flex-1 w-full">
+              <label className="block text-sm font-medium text-slate-700 mb-1">Frekuensi</label>
+              <select 
+                value={settingForm.frequency}
+                onChange={e => setSettingForm({...settingForm, frequency: e.target.value})}
+                className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none"
+              >
+                <option value="daily">Harian (Setiap Hari)</option>
+                <option value="weekly">Mingguan</option>
+                <option value="monthly">Bulanan</option>
+              </select>
+            </div>
+            
+            {settingForm.frequency === 'weekly' && (
+              <div className="flex-1 w-full animate-in fade-in zoom-in-95">
+                <label className="block text-sm font-medium text-slate-700 mb-1">Hari</label>
+                <select 
+                  value={settingForm.dayOfWeek}
+                  onChange={e => setSettingForm({...settingForm, dayOfWeek: parseInt(e.target.value)})}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none"
+                >
+                  <option value={1}>Senin</option>
+                  <option value={2}>Selasa</option>
+                  <option value={3}>Rabu</option>
+                  <option value={4}>Kamis</option>
+                  <option value={5}>Jumat</option>
+                  <option value={6}>Sabtu</option>
+                  <option value={0}>Minggu</option>
+                </select>
+              </div>
+            )}
+
+            {settingForm.frequency === 'monthly' && (
+              <div className="flex-1 w-full animate-in fade-in zoom-in-95">
+                <label className="block text-sm font-medium text-slate-700 mb-1">Tanggal</label>
+                <input 
+                  type="number" 
+                  min="1" max="31"
+                  value={settingForm.dateOfMonth}
+                  onChange={e => setSettingForm({...settingForm, dateOfMonth: parseInt(e.target.value)})}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none"
+                />
+              </div>
+            )}
+
+            <div className="flex-1 w-full">
+              <label className="block text-sm font-medium text-slate-700 mb-1">Pukul</label>
+              <input 
+                type="time" 
+                value={settingForm.time}
+                onChange={e => setSettingForm({...settingForm, time: e.target.value})}
+                className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none"
+                required
+              />
+            </div>
+
+            <button 
+              type="submit"
+              disabled={updateSettingMutation.isPending}
+              className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors disabled:opacity-50 w-full md:w-auto h-[42px]"
+            >
+              {updateSettingMutation.isPending ? 'Menyimpan...' : 'Simpan Jadwal'}
+            </button>
+          </form>
+        )}
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">

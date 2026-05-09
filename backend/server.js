@@ -185,6 +185,52 @@ app.get('/api/test-notification', async (req, res) => {
   }
 });
 
+// --- NOTIFICATION SETTING API ---
+
+app.get('/api/settings/notification', async (req, res) => {
+  try {
+    const setting = await prisma.notificationSetting.upsert({
+      where: { id: 1 },
+      update: {},
+      create: { id: 1, frequency: 'weekly', dayOfWeek: 6, dateOfMonth: 1, time: '08:00', cronString: '0 8 * * 6' }
+    });
+    res.json(setting);
+  } catch (error) {
+    res.status(500).json({ message: 'Gagal mengambil pengaturan.' });
+  }
+});
+
+app.put('/api/settings/notification', async (req, res) => {
+  try {
+    const { frequency, dayOfWeek, dateOfMonth, time } = req.body;
+    
+    // Parse time "HH:mm"
+    const [hour, minute] = time.split(':');
+    
+    let cronString = '* * * * *'; // fallback
+    if (frequency === 'daily') {
+      cronString = `${parseInt(minute)} ${parseInt(hour)} * * *`;
+    } else if (frequency === 'weekly') {
+      cronString = `${parseInt(minute)} ${parseInt(hour)} * * ${parseInt(dayOfWeek)}`;
+    } else if (frequency === 'monthly') {
+      cronString = `${parseInt(minute)} ${parseInt(hour)} ${parseInt(dateOfMonth)} * *`;
+    }
+
+    const updatedSetting = await prisma.notificationSetting.upsert({
+      where: { id: 1 },
+      update: { frequency, dayOfWeek: parseInt(dayOfWeek), dateOfMonth: parseInt(dateOfMonth), time, cronString },
+      create: { id: 1, frequency, dayOfWeek: parseInt(dayOfWeek), dateOfMonth: parseInt(dateOfMonth), time, cronString }
+    });
+
+    // Restart cron background job so it uses the new string immediately
+    startCronJobs();
+
+    res.json(updatedSetting);
+  } catch (error) {
+    res.status(500).json({ message: 'Gagal menyimpan pengaturan.' });
+  }
+});
+
 // --- USER MANAGEMENT API ---
 
 app.get('/api/users', async (req, res) => {
