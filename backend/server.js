@@ -357,7 +357,8 @@ startCronJobs();
 // --- PRODUCTION: SERVE FRONTEND ---
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
-app.get('*', (req, res) => {
+// SPA Fallback: serve index.html for any unhandled routes
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
 });
 
