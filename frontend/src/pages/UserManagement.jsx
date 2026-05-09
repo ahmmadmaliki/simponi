@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Edit2, Trash2, X, Clock } from 'lucide-react';
 
 const fetchUsers = async () => {
-  const res = await fetch('http://localhost:5000/api/users');
+  const res = await fetch('/api/users');
   if (!res.ok) throw new Error('Gagal mengambil data users');
   return res.json();
 };
@@ -29,7 +29,7 @@ export default function UserManagement() {
   const { data: setting, isLoading: isSettingLoading } = useQuery({
     queryKey: ['notificationSetting'],
     queryFn: async () => {
-      const res = await fetch('http://localhost:5000/api/settings/notification');
+      const res = await fetch('/api/settings/notification');
       if (!res.ok) throw new Error('Gagal memuat setting');
       return res.json();
     }
@@ -55,7 +55,7 @@ export default function UserManagement() {
 
   const updateSettingMutation = useMutation({
     mutationFn: async (newSetting) => {
-      const res = await fetch('http://localhost:5000/api/settings/notification', {
+      const res = await fetch('/api/settings/notification', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newSetting)
@@ -77,7 +77,7 @@ export default function UserManagement() {
 
   const createMutation = useMutation({
     mutationFn: async (newData) => {
-      const res = await fetch('http://localhost:5000/api/users', {
+      const res = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newData)
@@ -97,7 +97,7 @@ export default function UserManagement() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, ...updateData }) => {
-      const res = await fetch(`http://localhost:5000/api/users/${id}`, {
+      const res = await fetch(`/api/users/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updateData)
@@ -114,7 +114,7 @@ export default function UserManagement() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
-      const res = await fetch(`http://localhost:5000/api/users/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.message || 'Gagal menghapus');

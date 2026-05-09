@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Lightbulb, MapPin, Activity, AlertTriangle, ShieldAlert, Target } from 'lucide-react';
 
 const fetchRekomendasi = async () => {
-  const res = await fetch('http://localhost:5000/api/rekomendasi');
+  const res = await fetch('/api/rekomendasi');
   if (!res.ok) throw new Error('Gagal mengambil data rekomendasi');
   return res.json();
 };
