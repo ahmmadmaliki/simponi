@@ -185,6 +185,18 @@ app.get('/api/test-notification', async (req, res) => {
   }
 });
 
+// --- REKOMENDASI TINDAKAN API ---
+app.get('/api/rekomendasi', (req, res) => {
+  // TODO: Replace with real DB Query when Panen & Tunggakan data is available
+  const mockData = [
+    { id: 1, kecamatan: 'Plaosan', tipe: 'Operasi Gabungan', alasan: 'Wilayah masuk masa panen raya sayuran, namun tingkat tunggakan pajak PKB/BBNKB mencapai 45% dari potensi wilayah.', dataPanen: 'Tinggi', dataTunggakan: '45%' },
+    { id: 2, kecamatan: 'Maospati', tipe: 'Sosialisasi', alasan: 'Tidak sedang dalam masa panen, daya beli masyarakat cenderung stabil/menurun, namun tingkat tunggakan cukup tinggi.', dataPanen: 'Rendah', dataTunggakan: '30%' },
+    { id: 3, kecamatan: 'Magetan', tipe: 'Operasi Gabungan', alasan: 'Pusat perputaran ekonomi daerah, banyak kendaraan terpusat dengan rasio tunggakan kendaraan roda 4 mencapai 20%.', dataPanen: 'Sedang', dataTunggakan: '20%' },
+    { id: 4, kecamatan: 'Panekan', tipe: 'Sosialisasi', alasan: 'Masa panen padi mulai berakhir, tunggakan masih di batas wajar. Pendekatan persuasif (door-to-door) disarankan.', dataPanen: 'Sedang', dataTunggakan: '15%' }
+  ];
+  res.json(mockData);
+});
+
 // --- NOTIFICATION SETTING API ---
 
 app.get('/api/settings/notification', async (req, res) => {

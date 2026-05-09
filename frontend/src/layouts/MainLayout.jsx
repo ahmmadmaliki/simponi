@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Upload, Activity, BarChart2, LogOut, Users } from 'lucide-react';
+import { LayoutDashboard, Upload, Activity, BarChart2, LogOut, Users, Lightbulb } from 'lucide-react';
 import logoProvinsi from '../assets/Logo Provinsi.png';
 
 export default function MainLayout() {
@@ -10,6 +10,7 @@ export default function MainLayout() {
     { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={24} /> },
     { name: 'Kinerja Kegiatan', path: '/kinerja', icon: <Activity size={24} /> },
     { name: 'Evaluasi', path: '/evaluasi', icon: <BarChart2 size={24} /> },
+    { name: 'Rekomendasi Tindakan', path: '/rekomendasi', icon: <Lightbulb size={24} /> },
     ...(userRole === 'admin' ? [
       { name: 'Upload Data', path: '/upload', icon: <Upload size={24} /> },
       { name: 'Manajemen User', path: '/users', icon: <Users size={24} /> }

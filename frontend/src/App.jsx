@@ -6,6 +6,7 @@ import UploadData from './pages/UploadData';
 import KinerjaKegiatan from './pages/KinerjaKegiatan';
 import Evaluasi from './pages/Evaluasi';
 import UserManagement from './pages/UserManagement';
+import RekomendasiTindakan from './pages/RekomendasiTindakan';
 
 // Simple mock auth guard
 const ProtectedRoute = ({ children }) => {
@@ -32,6 +33,7 @@ function App() {
           <Route path="users" element={<AdminRoute><UserManagement /></AdminRoute>} />
           <Route path="kinerja" element={<KinerjaKegiatan />} />
           <Route path="evaluasi" element={<Evaluasi />} />
+          <Route path="rekomendasi" element={<RekomendasiTindakan />} />
         </Route>
       </Routes>
     </Router>

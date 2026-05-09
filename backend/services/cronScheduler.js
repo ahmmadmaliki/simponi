@@ -43,7 +43,9 @@ const evaluateTargets = async () => {
         `- *Ekspektasi Pro-Rata (Hari ke-${dayOfYear})*: ${formatRp(expectedRealisasi)}\n` +
         `- *Realisasi Aktual*: ${formatRp(realisasiTotal)}\n` +
         `- *Selisih/Kekurangan*: ${formatRp(expectedRealisasi - realisasiTotal)}\n\n` +
-        `Mohon segera ditindaklanjuti untuk strategi minggu depan.\nTerima kasih.`;
+        `Mohon segera ditindaklanjuti untuk strategi minggu depan.\n\n` +
+        `👉 *Lihat Rekomendasi Tindakan Operasi/Sosialisasi di sini:*\n` +
+        `http://localhost:5173/rekomendasi\n\nTerima kasih.`;
       
       // Notify ALL users who have receiveNotif = true
       const usersToAlert = await prisma.user.findMany({
