@@ -6,6 +6,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import multer from 'multer';
 import xlsx from 'xlsx';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import { waClient } from './services/notificationService.js';
 import { startCronJobs, evaluateTargets } from './services/cronScheduler.js';
@@ -15,6 +17,9 @@ dotenv.config();
 const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 5000;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 app.use(cors());
 app.use(express.json());
@@ -349,6 +354,14 @@ console.log('[SYSTEM] Memulai inisialisasi WA Client...');
 waClient.initialize();
 startCronJobs();
 
+// --- PRODUCTION: SERVE FRONTEND ---
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+});
+
+// --- START SERVER ---
 app.listen(PORT, () => {
   console.log(`[SERVER] SIMPONI Backend API running on http://localhost:${PORT}`);
 });
