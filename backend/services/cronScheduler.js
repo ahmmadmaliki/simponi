@@ -12,7 +12,7 @@ const evaluateTargets = async () => {
     const today = new Date();
     const diffTime = Math.abs(today - startOfYear);
     const dayOfYear = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     // Asumsi linear growth
     const expectedRatio = dayOfYear / 365;
 
@@ -27,7 +27,7 @@ const evaluateTargets = async () => {
     // Ambil Target dari DB
     const targetPKBResult = await prisma.targetOpsen.aggregate({ _sum: { targetRupiah: true }, where: { jenisOpsen: 'PKB', tahun: currentYear } });
     const targetBBNKBResult = await prisma.targetOpsen.aggregate({ _sum: { targetRupiah: true }, where: { jenisOpsen: 'BBNKB', tahun: currentYear } });
-    
+
     const targetPKB = Number(targetPKBResult._sum.targetRupiah || 0);
     const targetBBNKB = Number(targetBBNKBResult._sum.targetRupiah || 0);
     const targetTotal = targetPKB + targetBBNKB;
@@ -36,7 +36,7 @@ const evaluateTargets = async () => {
 
     if (realisasiTotal < expectedRealisasi) {
       const formatRp = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(num);
-      
+
       const message = `*SIMPONI ALERT - Evaluasi Akhir Pekan*\n\n` +
         `Yth. Bapak/Ibu,\n\n` +
         `Sistem mendeteksi bahwa *Realisasi Total Opsen* saat ini belum memenuhi ambang batas *Pro-Rata* yang diharapkan hingga hari ini.\n\n` +
@@ -44,9 +44,9 @@ const evaluateTargets = async () => {
         `- *Realisasi Aktual*: ${formatRp(realisasiTotal)}\n` +
         `- *Selisih/Kekurangan*: ${formatRp(expectedRealisasi - realisasiTotal)}\n\n` +
         `Mohon segera ditindaklanjuti untuk strategi minggu depan.\n\n` +
-        `👉 *Lihat Rekomendasi Tindakan Operasi/Sosialisasi di sini:*\n` +
+        `👉 *Lihat Rekomendasi Tindakan di sini:*\n` +
         `http://localhost:5173/rekomendasi\n\nTerima kasih.`;
-      
+
       // Notify ALL users who have receiveNotif = true
       const usersToAlert = await prisma.user.findMany({
         where: { receiveNotif: true }
@@ -56,7 +56,7 @@ const evaluateTargets = async () => {
         if (user.noWa) {
           await sendWhatsAppAlert(user.noWa, message);
         }
-        
+
         if (user.email) {
           await sendEmailAlert(user.email, 'Peringatan Target Evaluasi SIMPONI', message);
         }
@@ -87,7 +87,7 @@ export const startCronJobs = async () => {
     currentJob = cron.schedule(setting.cronString, () => {
       evaluateTargets();
     });
-    
+
     console.log(`[CRON] Penjadwalan Evaluasi Target aktif. Cron: ${setting.cronString} (${setting.frequency})`);
   } catch (err) {
     console.error('[CRON] Gagal menginisialisasi jadwal:', err);
