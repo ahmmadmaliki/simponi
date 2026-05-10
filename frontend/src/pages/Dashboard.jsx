@@ -55,23 +55,23 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0 bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-200">
         <div>
-          <h2 className="text-3xl font-extrabold text-slate-800">Dashboard Evaluasi Target Opsen</h2>
-          <p className="text-slate-500 mt-1 text-xl">Tahun Anggaran 2026</p>
+          <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800">Dashboard Evaluasi Target Opsen</h2>
+          <p className="text-slate-500 mt-1 text-lg md:text-xl">Tahun Anggaran 2026</p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="px-6 py-4 rounded-xl border border-slate-300 text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold"
+            className="px-4 md:px-6 py-3 md:py-4 rounded-xl border border-slate-300 text-base md:text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold w-full sm:w-auto"
           >
             <option value="Tahunan">Tampilan Tahunan</option>
             <option value="Semester">Tampilan Semester</option>
             <option value="Triwulan">Tampilan Triwulan</option>
           </select>
-          <button className="flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-6 rounded-xl shadow-md transition-all text-lg">
-            <Download size={24} />
+          <button className="flex justify-center items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-xl shadow-md transition-all text-base md:text-lg w-full sm:w-auto">
+            <Download size={20} className="md:w-6 md:h-6" />
             Unduh Excel
           </button>
         </div>

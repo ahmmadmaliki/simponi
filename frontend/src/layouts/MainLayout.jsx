@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Upload, Activity, BarChart2, LogOut, Users, Lightbulb } from 'lucide-react';
+import { LayoutDashboard, Upload, Activity, BarChart2, LogOut, Users, Lightbulb, Menu, X } from 'lucide-react';
 import logoProvinsi from '../assets/Logo Provinsi.png';
 
 export default function MainLayout() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const userRole = localStorage.getItem('role');
 
@@ -24,9 +26,17 @@ export default function MainLayout() {
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <div className="flex h-screen bg-slate-50 overflow-hidden relative">
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-800/50 backdrop-blur-sm z-20 md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-72 bg-primary-800 text-white flex flex-col shadow-xl z-10 hidden md:flex">
+      <aside className={`w-72 bg-primary-800 text-white flex flex-col shadow-xl z-30 absolute md:relative h-full transition-transform duration-300 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
         <div className="p-6 bg-primary-900 border-b border-primary-700 flex items-center gap-4">
           <img src={logoProvinsi} alt="Logo" className="w-12 h-14 object-contain drop-shadow-md" />
           <div>
@@ -43,6 +53,7 @@ export default function MainLayout() {
                 <li key={item.path}>
                   <Link
                     to={item.path}
+                    onClick={() => setIsMobileMenuOpen(false)}
                     className={`flex items-center gap-3 px-4 py-3 rounded-lg text-[17px] font-medium transition-colors ${isActive
                       ? 'bg-white text-primary-800 shadow-md'
                       : 'text-primary-100 hover:bg-primary-700 hover:text-white'
@@ -69,14 +80,22 @@ export default function MainLayout() {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* Header for mobile - abbreviated for now */}
-        <header className="bg-white border-b border-slate-200 h-20 px-8 flex items-center justify-between shadow-sm">
-          <h2 className="text-2xl font-bold text-slate-800 hidden md:block">
-            {navItems.find(i => location.pathname.startsWith(i.path))?.name || 'SIMPONI'}
-          </h2>
-          <div className="flex items-center gap-4 ml-auto">
-            <div className="flex flex-col items-end">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden w-full">
+        {/* Header */}
+        <header className="bg-white border-b border-slate-200 h-20 px-4 md:px-8 flex items-center justify-between shadow-sm relative z-10">
+          <div className="flex items-center gap-3">
+            <button 
+              className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              onClick={() => setIsMobileMenuOpen(true)}
+            >
+              <Menu size={24} />
+            </button>
+            <h2 className="text-xl md:text-2xl font-bold text-slate-800 truncate max-w-[200px] md:max-w-none">
+              {navItems.find(i => location.pathname.startsWith(i.path))?.name || 'SIMPONI'}
+            </h2>
+          </div>
+          <div className="flex items-center gap-2 md:gap-4 ml-auto">
+            <div className="flex flex-col items-end hidden sm:flex">
               <span className="text-[17px] font-semibold text-slate-700 capitalize">
                 {userRole === 'admin' ? 'Admin Pusat' : userRole}
               </span>
@@ -88,7 +107,7 @@ export default function MainLayout() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto bg-slate-50 p-8">
+        <main className="flex-1 overflow-auto bg-slate-50 p-4 md:p-8">
           <Outlet />
         </main>
       </div>
