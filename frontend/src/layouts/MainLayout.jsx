@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Upload, Activity, BarChart2, LogOut, Users, Lightbulb, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Activity, BarChart2, LogOut, Users, Lightbulb, Menu, Database, ChevronDown, ChevronRight, Target, FileSpreadsheet, Map, FileWarning } from 'lucide-react';
 import logoProvinsi from '../assets/Logo Provinsi.png';
 
 export default function MainLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMasterDataOpen, setIsMasterDataOpen] = useState(false);
   const location = useLocation();
   const userRole = localStorage.getItem('role');
 
@@ -12,12 +13,16 @@ export default function MainLayout() {
     { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={24} /> },
     { name: 'Kinerja Kegiatan', path: '/kinerja', icon: <Activity size={24} /> },
     { name: 'Evaluasi', path: '/evaluasi', icon: <BarChart2 size={24} /> },
-    { name: 'Rekomendasi Tindakan', path: '/rekomendasi', icon: <Lightbulb size={24} /> },
-    ...(userRole === 'admin' ? [
-      { name: 'Upload Data', path: '/upload', icon: <Upload size={24} /> },
-      { name: 'Manajemen User', path: '/users', icon: <Users size={24} /> }
-    ] : []),
+    { name: 'Rekomendasi Tindakan', path: '/rekomendasi', icon: <Lightbulb size={24} /> }
   ];
+
+  const masterDataItems = userRole === 'admin' ? [
+    { name: 'Manajemen User', path: '/master/users', icon: <Users size={20} /> },
+    { name: 'Data Target Opsen', path: '/master/target', icon: <Target size={20} /> },
+    { name: 'Data Realisasi Opsen', path: '/master/realisasi', icon: <FileSpreadsheet size={20} /> },
+    { name: 'Data Panen', path: '/master/panen', icon: <Map size={20} /> },
+    { name: 'Data Tunggakan', path: '/master/tunggakan', icon: <FileWarning size={20} /> },
+  ] : [];
 
   const handleLogout = () => {
     localStorage.removeItem('auth');
@@ -65,6 +70,46 @@ export default function MainLayout() {
                 </li>
               );
             })}
+
+            {userRole === 'admin' && (
+              <li className="pt-2">
+                <button
+                  onClick={() => setIsMasterDataOpen(!isMasterDataOpen)}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-[17px] font-medium transition-colors ${
+                    location.pathname.startsWith('/master') ? 'bg-primary-900 text-white' : 'text-primary-100 hover:bg-primary-700 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Database size={24} />
+                    <span>Master Data</span>
+                  </div>
+                  {isMasterDataOpen ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                </button>
+                
+                {isMasterDataOpen && (
+                  <ul className="mt-2 space-y-1 px-4 border-l-2 border-primary-700 ml-6">
+                    {masterDataItems.map((subItem) => {
+                      const isSubActive = location.pathname.startsWith(subItem.path);
+                      return (
+                        <li key={subItem.path}>
+                          <Link
+                            to={subItem.path}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-[15px] font-medium transition-colors ${isSubActive
+                              ? 'bg-primary-50 text-primary-800 shadow-sm'
+                              : 'text-primary-200 hover:text-white hover:bg-primary-700/50'
+                              }`}
+                          >
+                            {subItem.icon}
+                            {subItem.name}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </li>
+            )}
           </ul>
         </nav>
 
@@ -91,7 +136,7 @@ export default function MainLayout() {
               <Menu size={24} />
             </button>
             <h2 className="text-xl md:text-2xl font-bold text-slate-800 truncate max-w-[200px] md:max-w-none">
-              {navItems.find(i => location.pathname.startsWith(i.path))?.name || 'SIMPONI'}
+              {navItems.concat(masterDataItems).find(i => location.pathname.startsWith(i.path))?.name || 'SIMPONI'}
             </h2>
           </div>
           <div className="flex items-center gap-2 md:gap-4 ml-auto">

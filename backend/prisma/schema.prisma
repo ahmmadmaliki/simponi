@@ -61,3 +61,23 @@ model NotificationSetting {
   cronString  String   @default("0 8 * * 6")
   updatedAt   DateTime @updatedAt
 }
+
+model DataPanen {
+  id           Int      @id @default(autoincrement())
+  kecamatan    String
+  desa         String?
+  bulan        String
+  tahun        Int
+  statusPanen  String   // e.g., "Tinggi", "Sedang", "Rendah"
+  createdAt    DateTime @default(now())
+}
+
+model DataTunggakan {
+  id             Int      @id @default(autoincrement())
+  kecamatan      String
+  desa           String?
+  bulan          String
+  tahun          Int
+  rasioTunggakan Decimal  @db.Decimal(5, 2) // Percentage e.g. 45.50
+  createdAt      DateTime @default(now())
+}

@@ -139,22 +139,79 @@ app.get('/api/kinerja', async (req, res) => {
   }
 });
 
-// Excel Upload Route (Opsen)
-app.post('/api/upload/opsen', upload.single('file'), async (req, res) => {
+// --- DATA PANEN ---
+app.get('/api/panen', async (req, res) => {
+  const data = await prisma.dataPanen.findMany();
+  res.json(data);
+});
+app.post('/api/upload/panen', upload.single('file'), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'Tidak ada file yang diunggah' });
-    }
-    
-    // Parse the file generically
     const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-    const data = xlsx.utils.sheet_to_json(sheet);
-    
-    // Map dynamically array records to Prisma models
+    const data = xlsx.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+    const mapped = data.map(row => ({
+      kecamatan: row['Kecamatan']?.toString() || '',
+      desa: row['Desa']?.toString() || null,
+      bulan: row['Bulan']?.toString() || 'Januari',
+      tahun: Number(row['Tahun']) || new Date().getFullYear(),
+      statusPanen: row['Status Panen']?.toString() || 'Sedang'
+    }));
+    await prisma.dataPanen.createMany({ data: mapped });
+    res.json({ message: 'Data Panen berhasil diunggah' });
+  } catch (error) { res.status(500).json({ message: 'Gagal upload Data Panen' }); }
+});
+
+// --- DATA TUNGGAKAN ---
+app.get('/api/tunggakan', async (req, res) => {
+  const data = await prisma.dataTunggakan.findMany();
+  res.json(data);
+});
+app.post('/api/upload/tunggakan', upload.single('file'), async (req, res) => {
+  try {
+    const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+    const data = xlsx.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+    const mapped = data.map(row => ({
+      kecamatan: row['Kecamatan']?.toString() || '',
+      desa: row['Desa']?.toString() || null,
+      bulan: row['Bulan']?.toString() || 'Januari',
+      tahun: Number(row['Tahun']) || new Date().getFullYear(),
+      rasioTunggakan: Number(row['Rasio Tunggakan (%)']) || 0
+    }));
+    await prisma.dataTunggakan.createMany({ data: mapped });
+    res.json({ message: 'Data Tunggakan berhasil diunggah' });
+  } catch (error) { res.status(500).json({ message: 'Gagal upload Data Tunggakan' }); }
+});
+
+// --- DATA TARGET ---
+app.get('/api/target', async (req, res) => {
+  const data = await prisma.targetOpsen.findMany();
+  res.json(data);
+});
+app.post('/api/upload/target', upload.single('file'), async (req, res) => {
+  try {
+    const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+    const data = xlsx.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+    const mapped = data.map(row => ({
+      jenisOpsen: row['Jenis Opsen']?.toString() || 'PKB',
+      tahun: Number(row['Tahun']) || new Date().getFullYear(),
+      triwulan: Number(row['Triwulan']) || 1,
+      targetRupiah: Number(row['Target Rupiah']) || 0
+    }));
+    await prisma.targetOpsen.createMany({ data: mapped });
+    res.json({ message: 'Data Target berhasil diunggah' });
+  } catch (error) { res.status(500).json({ message: 'Gagal upload Data Target' }); }
+});
+
+// --- DATA REALISASI ---
+app.get('/api/realisasi', async (req, res) => {
+  const data = await prisma.realisasiOpsen.findMany();
+  res.json(data);
+});
+app.post('/api/upload/realisasi', upload.single('file'), async (req, res) => {
+  try {
+    const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+    const data = xlsx.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
     const mappedData = data.map(row => ({
-      kecamatan: row['Kecamatan']?.toString() || 'Tidak Diketahui',
+      kecamatan: row['Kecamatan']?.toString() || '',
       desaKelurahan: row['Desa/Kelurahan']?.toString() || '-',
       tahun: Number(row['Tahun']) || new Date().getFullYear(),
       bulan: row['Bulan']?.toString() || 'Januari',
@@ -164,21 +221,26 @@ app.post('/api/upload/opsen', upload.single('file'), async (req, res) => {
       opsenBbnkb: Number(row['Opsen BBNKB']) || 0,
       totalOpsen: Number(row['Total Realisasi Opsen']) || 0
     }));
-
-    if (mappedData.length > 0) {
-      await prisma.realisasiOpsen.createMany({ data: mappedData });
-    }
-
-    res.json({ 
-      message: 'File Excel berhasil dibaca dan ditambahkan ke database.',  
-      rowCount: data.length,
-      preview: data.slice(0, 2)
-    });
-  } catch (error) {
-    console.error('Upload excel error:', error);
-    res.status(500).json({ message: 'Gagal memproses file Excel, pastikan format valid.' });
-  }
+    await prisma.realisasiOpsen.createMany({ data: mappedData });
+    res.json({ message: 'Data Realisasi berhasil diunggah' });
+  } catch (error) { res.status(500).json({ message: 'Gagal upload Data Realisasi' }); }
 });
+
+// --- TEMPLATE DOWNLOAD ROUTES ---
+const createTemplate = (res, filename, columns) => {
+  const ws = xlsx.utils.aoa_to_sheet([columns]);
+  const wb = xlsx.utils.book_new();
+  xlsx.utils.book_append_sheet(wb, ws, "Sheet1");
+  const buffer = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}.xlsx"`);
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.send(buffer);
+};
+
+app.get('/api/template/panen', (req, res) => createTemplate(res, 'Template_Panen', ['Kecamatan', 'Desa', 'Bulan', 'Tahun', 'Status Panen']));
+app.get('/api/template/tunggakan', (req, res) => createTemplate(res, 'Template_Tunggakan', ['Kecamatan', 'Desa', 'Bulan', 'Tahun', 'Rasio Tunggakan (%)']));
+app.get('/api/template/target', (req, res) => createTemplate(res, 'Template_Target', ['Jenis Opsen', 'Tahun', 'Triwulan', 'Target Rupiah']));
+app.get('/api/template/realisasi', (req, res) => createTemplate(res, 'Template_Realisasi', ['Kecamatan', 'Desa/Kelurahan', 'Tahun', 'Bulan', 'PKB Pokok', 'Opsen PKB', 'BBNKB Pokok', 'Opsen BBNKB', 'Total Realisasi Opsen']));
 
 // Manual Trigger for Notification Testing
 app.get('/api/test-notification', async (req, res) => {
