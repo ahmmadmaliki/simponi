@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../api/axios';
-import { Upload, Download, FileSpreadsheet } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Search } from 'lucide-react';
 
 export default function DataRealisasi() {
   const queryClient = useQueryClient();
@@ -16,12 +16,18 @@ export default function DataRealisasi() {
   });
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
   const itemsPerPage = 10;
   
+  const filteredData = realisasi?.filter(item => 
+    item.kecamatan?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    item.desaKelurahan?.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = realisasi?.slice(indexOfFirstItem, indexOfLastItem) || [];
-  const totalPages = Math.ceil((realisasi?.length || 0) / itemsPerPage);
+  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
   const uploadMutation = useMutation({
     mutationFn: async (file) => {
@@ -94,6 +100,26 @@ export default function DataRealisasi() {
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        {/* Search Bar */}
+        <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="relative w-full max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input 
+              type="text"
+              placeholder="Cari kecamatan atau desa..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+            />
+          </div>
+          <div className="text-sm text-slate-500 font-medium">
+            Total Data: {filteredData.length}
+          </div>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse whitespace-nowrap">
             <thead>
@@ -112,8 +138,8 @@ export default function DataRealisasi() {
             <tbody className="divide-y divide-slate-100 text-sm">
               {isLoading ? (
                 <tr><td colSpan="9" className="p-8 text-center text-slate-500">Memuat data...</td></tr>
-              ) : realisasi?.length === 0 ? (
-                <tr><td colSpan="9" className="p-8 text-center text-slate-500">Belum ada data. Silakan unggah Excel.</td></tr>
+              ) : filteredData.length === 0 ? (
+                <tr><td colSpan="9" className="p-8 text-center text-slate-500">Data tidak ditemukan.</td></tr>
               ) : (
                 currentItems.map((item, index) => (
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
