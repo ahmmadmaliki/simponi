@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../api/axios';
 import { Upload, Download, FileSpreadsheet } from 'lucide-react';
@@ -14,6 +14,14 @@ export default function DataRealisasi() {
       return res.data;
     }
   });
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = realisasi?.slice(indexOfFirstItem, indexOfLastItem) || [];
+  const totalPages = Math.ceil((realisasi?.length || 0) / itemsPerPage);
 
   const uploadMutation = useMutation({
     mutationFn: async (file) => {
@@ -107,9 +115,9 @@ export default function DataRealisasi() {
               ) : realisasi?.length === 0 ? (
                 <tr><td colSpan="9" className="p-8 text-center text-slate-500">Belum ada data. Silakan unggah Excel.</td></tr>
               ) : (
-                realisasi?.map((item, index) => (
+                currentItems.map((item, index) => (
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="p-4 text-slate-500">{index + 1}</td>
+                    <td className="p-4 text-slate-500">{indexOfFirstItem + index + 1}</td>
                     <td className="p-4 font-bold text-slate-800">{item.kecamatan}</td>
                     <td className="p-4 text-slate-600">{item.desaKelurahan}</td>
                     <td className="p-4 text-slate-600">{item.bulan} {item.tahun}</td>
@@ -123,6 +131,29 @@ export default function DataRealisasi() {
               )}
             </tbody>
           </table>
+        </div>
+        
+        {/* Pagination Controls */}
+        <div className="p-4 border-t border-slate-200 flex items-center justify-between text-sm bg-slate-50">
+          <span className="text-slate-500 font-medium">
+            Halaman {currentPage} dari {totalPages || 1}
+          </span>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-4 py-2 border border-slate-200 bg-white rounded-lg text-slate-600 font-medium disabled:opacity-50 hover:bg-slate-100 transition-colors"
+            >
+              Sebelumnya
+            </button>
+            <button 
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage >= totalPages || totalPages === 0}
+              className="px-4 py-2 border border-slate-200 bg-white rounded-lg text-slate-600 font-medium disabled:opacity-50 hover:bg-slate-100 transition-colors"
+            >
+              Berikutnya
+            </button>
+          </div>
         </div>
       </div>
     </div>
