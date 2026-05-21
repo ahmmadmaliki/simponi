@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -15,7 +15,8 @@ import DataRealisasi from './pages/MasterData/DataRealisasi';
 // Simple mock auth guard
 const ProtectedRoute = ({ children }) => {
   const isAuth = localStorage.getItem('auth') === 'true';
-  return isAuth ? children : <Navigate to="/login" />;
+  const location = useLocation();
+  return isAuth ? children : <Navigate to="/login" state={{ from: location }} replace />;
 };
 
 // Admin only guard

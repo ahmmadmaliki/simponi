@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import api from '../api/axios';
@@ -7,6 +7,9 @@ import logoProvinsi from '../assets/Logo Provinsi.png';
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || '/dashboard';
+  
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('admin');
 
@@ -19,7 +22,7 @@ export default function Login() {
       localStorage.setItem('auth', 'true');
       localStorage.setItem('token', data.token);
       localStorage.setItem('role', data.user.role);
-      navigate('/dashboard');
+      navigate(from, { replace: true });
     }
   });
 
