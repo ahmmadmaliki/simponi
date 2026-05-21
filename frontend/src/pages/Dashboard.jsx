@@ -115,21 +115,31 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 border-t-8 border-t-orange-500 overflow-hidden">
-          <div className="flex justify-between items-start">
-            <div className="min-w-0 pr-4">
-              <p className="text-slate-500 font-bold text-lg xl:text-xl uppercase tracking-wider truncate" title="Target Total Opsen">Realisasi Total</p>
-              <h3 className="text-3xl xl:text-4xl font-black text-slate-800 mt-2 truncate">{formatRupiah(realisasiPkb + realisasiBbnkb)}</h3>
-            </div>
-            <div className="bg-orange-100 p-4 rounded-full text-orange-600 shrink-0">
-              <Target size={32} />
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 border-t-8 border-t-orange-500 overflow-hidden flex items-center gap-6">
+          <div className="relative w-28 h-28 shrink-0 flex items-center justify-center">
+            <svg className="transform -rotate-90 w-28 h-28">
+              <circle cx="56" cy="56" r="44" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-slate-100" />
+              <circle 
+                cx="56" 
+                cy="56" 
+                r="44" 
+                stroke="currentColor" 
+                strokeWidth="12" 
+                fill="transparent" 
+                strokeDasharray={2 * Math.PI * 44} 
+                strokeDashoffset={(2 * Math.PI * 44) - (Math.min(totalPercent || 0, 100) / 100) * (2 * Math.PI * 44)} 
+                className="text-orange-500 transition-all duration-1000 ease-out" 
+                strokeLinecap="round" 
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="font-black text-xl text-slate-800">{Number.isNaN(totalPercent) ? 0 : totalPercent.toFixed(1)}%</span>
             </div>
           </div>
-          <div className="mt-6">
-            <div className="w-full bg-slate-200 rounded-full h-4">
-              <div className="bg-orange-500 h-4 rounded-full" style={{ width: `${Math.min(totalPercent, 100)}%` }}></div>
-            </div>
-            <p className="mt-3 text-lg font-semibold text-slate-600">Terpenuhi: {totalPercent.toFixed(1)}% dari {formatRupiah(targetTotal)}</p>
+          <div className="min-w-0 flex-1">
+             <p className="text-slate-500 font-bold text-lg xl:text-xl uppercase tracking-wider truncate" title="Target Total Opsen">Realisasi Total</p>
+             <h3 className="text-3xl xl:text-4xl font-black text-slate-800 mt-1 truncate">{formatRupiah(realisasiPkb + realisasiBbnkb)}</h3>
+             <p className="mt-2 text-base font-semibold text-slate-500">Target: {formatRupiah(targetTotal)}</p>
           </div>
         </div>
 
