@@ -30,7 +30,7 @@ export default function RekomendasiTindakan() {
             Rekomendasi Tindakan Proaktif
           </h1>
           <p className="text-primary-100 text-lg leading-relaxed">
-            Sistem Pendukung Keputusan (DSS) SIMPONI menganalisis korelasi antara 
+            Sistem Pendukung Keputusan (DSS) SIOPTIMA menganalisis korelasi antara 
             <strong className="text-white mx-1">Data Masa Panen</strong> dan 
             <strong className="text-white mx-1">Tingkat Tunggakan Kendaraan</strong> 
             untuk menyarankan tindakan lapangan yang paling efektif di setiap kecamatan.

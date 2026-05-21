@@ -185,7 +185,7 @@ export default function UserManagement() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">Manajemen User</h1>
-          <p className="text-slate-500 mt-1">Kelola hak akses dan kontak notifikasi pengguna SIMPONI.</p>
+          <p className="text-slate-500 mt-1">Kelola hak akses dan kontak notifikasi pengguna SIOPTIMA.</p>
         </div>
         <button
           onClick={() => handleOpenModal()}

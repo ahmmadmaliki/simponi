@@ -28,7 +28,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 // Basic endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'SIMPONI Backend is running.' });
+  res.json({ status: 'ok', message: 'SIOPTIMA Backend is running.' });
 });
 
 // Auth Login Route
@@ -403,7 +403,7 @@ app.get('/api/test-wa', async (req, res) => {
   try {
     const number = req.query.number || '088991360201';
     const formattedNumber = number.replace(/^[0|+]/, '62') + '@c.us';
-    await waClient.sendMessage(formattedNumber, '*SIMPONI TEST* - Jika pesan ini masuk, berarti koneksi WA berjalan lancar.');
+    await waClient.sendMessage(formattedNumber, '*SIOPTIMA TEST* - Jika pesan ini masuk, berarti koneksi WA berjalan lancar.');
     res.json({ success: true, message: `Pesan sukses terkirim ke ${formattedNumber}` });
   } catch (error) {
     res.json({ success: false, error: error.toString(), message: 'Gagal mengirim pesan WA' });
@@ -426,5 +426,5 @@ app.use((req, res) => {
 
 // --- START SERVER ---
 app.listen(PORT, () => {
-  console.log(`[SERVER] SIMPONI Backend API running on http://localhost:${PORT}`);
+  console.log(`[SERVER] SIOPTIMA Backend API running on http://localhost:${PORT}`);
 });

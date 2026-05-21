@@ -13,7 +13,7 @@ let isWaReady = false;
 
 waClient.on('qr', (qr) => {
   console.log('================================================================');
-  console.log('[WhatsApp] Silakan Scan QR Code ini melalui HP Anda untuk menghubungkan SIMPONI:');
+  console.log('[WhatsApp] Silakan Scan QR Code ini melalui HP Anda untuk menghubungkan SIOPTIMA:');
   qrcode.generate(qr, { small: true });
   console.log('================================================================');
 });

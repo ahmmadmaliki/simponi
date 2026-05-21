@@ -46,7 +46,7 @@ export default function MainLayout() {
           <img src={logoProvinsi} alt="Logo" className="w-12 h-14 object-contain drop-shadow-md" />
           <div>
             <p className="text-primary-200 text-xs font-bold uppercase tracking-wider mb-0.5">UPT PPD Magetan</p>
-            <h1 className="text-3xl font-black tracking-tight text-white drop-shadow">SIMPONI</h1>
+            <h1 className="text-3xl font-black tracking-tight text-white drop-shadow">SIOPTIMA</h1>
           </div>
         </div>
 
@@ -136,7 +136,7 @@ export default function MainLayout() {
               <Menu size={24} />
             </button>
             <h2 className="text-xl md:text-2xl font-bold text-slate-800 truncate max-w-[200px] md:max-w-none">
-              {navItems.concat(masterDataItems).find(i => location.pathname.startsWith(i.path))?.name || 'SIMPONI'}
+              {navItems.concat(masterDataItems).find(i => location.pathname.startsWith(i.path))?.name || 'SIOPTIMA'}
             </h2>
           </div>
           <div className="flex items-center gap-2 md:gap-4 ml-auto">

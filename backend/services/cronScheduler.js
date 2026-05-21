@@ -37,7 +37,7 @@ const evaluateTargets = async () => {
     if (realisasiTotal < expectedRealisasi) {
       const formatRp = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(num);
 
-      const message = `*SIMPONI ALERT - Evaluasi Akhir Pekan*\n\n` +
+      const message = `*SIOPTIMA ALERT - Evaluasi Akhir Pekan*\n\n` +
         `Yth. Bapak/Ibu,\n\n` +
         `Sistem mendeteksi bahwa *Realisasi Total Opsen* saat ini belum memenuhi ambang batas *Pro-Rata* yang diharapkan hingga hari ini.\n\n` +
         `- *Ekspektasi Pro-Rata (Hari ke-${dayOfYear})*: ${formatRp(expectedRealisasi)}\n` +
@@ -58,7 +58,7 @@ const evaluateTargets = async () => {
         }
 
         if (user.email) {
-          await sendEmailAlert(user.email, 'Peringatan Target Evaluasi SIMPONI', message);
+          await sendEmailAlert(user.email, 'Peringatan Target Evaluasi SIOPTIMA', message);
         }
       }
     } else {

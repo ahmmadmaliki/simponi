@@ -36,10 +36,10 @@ export default function Login() {
            UPT PPD Magetan
         </h1>
         <h2 className="text-center text-5xl font-black text-primary-900 tracking-tight drop-shadow-sm">
-          SIMPONI
+          SIOPTIMA
         </h2>
         <p className="mt-2 text-center text-lg text-primary-700 font-medium">
-          Sistem Monitoring Opsen Terintegrasi<br/> Kabupaten Magetan
+          Sistem Informasi Opsen Pajak Terintegrasi<br/>dan Monitoring Analisis
         </p>
       </div>
 
