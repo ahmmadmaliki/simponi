@@ -1,11 +1,11 @@
-import cron from 'node-cron';
-import { PrismaClient } from '@prisma/client';
-import { sendWhatsAppAlert, sendEmailAlert } from './notificationService.js';
+import { PrismaClient } from "@prisma/client";
+import cron from "node-cron";
+import { sendEmailAlert, sendWhatsAppAlert } from "./notificationService.js";
 
 const prisma = new PrismaClient();
 
 const evaluateTargets = async () => {
-  console.log('[CRON] Mengevaluasi target capaian...');
+  console.log("[CRON] Mengevaluasi target capaian...");
   try {
     const currentYear = new Date().getFullYear();
     const startOfYear = new Date(currentYear, 0, 1);
@@ -18,15 +18,21 @@ const evaluateTargets = async () => {
 
     // Hitung total realisasi PKB & BBNKB
     const aggregateRealisasi = await prisma.realisasiOpsen.aggregate({
-      _sum: { opsenPkb: true, opsenBbnkb: true }
+      _sum: { opsenPkb: true, opsenBbnkb: true },
     });
     const realisasiPKB = Number(aggregateRealisasi._sum.opsenPkb || 0);
     const realisasiBBNKB = Number(aggregateRealisasi._sum.opsenBbnkb || 0);
     const realisasiTotal = realisasiPKB + realisasiBBNKB;
 
     // Ambil Target dari DB
-    const targetPKBResult = await prisma.targetOpsen.aggregate({ _sum: { targetRupiah: true }, where: { jenisOpsen: 'PKB', tahun: currentYear } });
-    const targetBBNKBResult = await prisma.targetOpsen.aggregate({ _sum: { targetRupiah: true }, where: { jenisOpsen: 'BBNKB', tahun: currentYear } });
+    const targetPKBResult = await prisma.targetOpsen.aggregate({
+      _sum: { targetRupiah: true },
+      where: { jenisOpsen: "PKB", tahun: currentYear },
+    });
+    const targetBBNKBResult = await prisma.targetOpsen.aggregate({
+      _sum: { targetRupiah: true },
+      where: { jenisOpsen: "BBNKB", tahun: currentYear },
+    });
 
     const targetPKB = Number(targetPKBResult._sum.targetRupiah || 0);
     const targetBBNKB = Number(targetBBNKBResult._sum.targetRupiah || 0);
@@ -35,21 +41,26 @@ const evaluateTargets = async () => {
     const expectedRealisasi = targetTotal * expectedRatio;
 
     if (realisasiTotal < expectedRealisasi) {
-      const formatRp = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(num);
+      const formatRp = (num) =>
+        new Intl.NumberFormat("id-ID", {
+          style: "currency",
+          currency: "IDR",
+        }).format(num);
 
-      const message = `*SIOPTIMA ALERT - Evaluasi Akhir Pekan*\n\n` +
+      const message =
+        `*SIOPTIMA ALERT - Evaluasi Akhir Pekan*\n\n` +
         `Yth. Bapak/Ibu,\n\n` +
         `Sistem mendeteksi bahwa *Realisasi Total Opsen* saat ini belum memenuhi ambang batas *Pro-Rata* yang diharapkan hingga hari ini.\n\n` +
         `- *Ekspektasi Pro-Rata (Hari ke-${dayOfYear})*: ${formatRp(expectedRealisasi)}\n` +
         `- *Realisasi Aktual*: ${formatRp(realisasiTotal)}\n` +
         `- *Selisih/Kekurangan*: ${formatRp(expectedRealisasi - realisasiTotal)}\n\n` +
         `Mohon segera ditindaklanjuti untuk strategi minggu depan.\n\n` +
-        `👉 *Lihat Rekomendasi Tindakan di sini:*\n` +
-        `${process.env.PUBLIC_URL || 'http://localhost:5000'}/rekomendasi\n\nTerima kasih.`;
+        `👉 *LIHAT REKOMENDASI TINDAKAN DI SINI:*\n` +
+        `${process.env.PUBLIC_URL || "http://localhost:5000"}/rekomendasi\n\nTerima kasih.`;
 
       // Notify ALL users who have receiveNotif = true
       const usersToAlert = await prisma.user.findMany({
-        where: { receiveNotif: true }
+        where: { receiveNotif: true },
       });
 
       for (const user of usersToAlert) {
@@ -58,14 +69,18 @@ const evaluateTargets = async () => {
         }
 
         if (user.email) {
-          await sendEmailAlert(user.email, 'Peringatan Target Evaluasi SIOPTIMA', message);
+          await sendEmailAlert(
+            user.email,
+            "Peringatan Target Evaluasi SIOPTIMA",
+            message,
+          );
         }
       }
     } else {
-      console.log('[CRON] Evaluasi aman, target terpenuhi.');
+      console.log("[CRON] Evaluasi aman, target terpenuhi.");
     }
   } catch (error) {
-    console.error('[CRON] Error evaluating targets:', error);
+    console.error("[CRON] Error evaluating targets:", error);
   }
 };
 
@@ -76,21 +91,30 @@ export const startCronJobs = async () => {
     const setting = await prisma.notificationSetting.upsert({
       where: { id: 1 },
       update: {},
-      create: { id: 1, frequency: 'weekly', dayOfWeek: 6, dateOfMonth: 1, time: '08:00', cronString: '0 8 * * 6' }
+      create: {
+        id: 1,
+        frequency: "weekly",
+        dayOfWeek: 6,
+        dateOfMonth: 1,
+        time: "08:00",
+        cronString: "0 8 * * 6",
+      },
     });
 
     if (currentJob) {
       currentJob.stop();
-      console.log('[CRON] Jadwal lama dihentikan.');
+      console.log("[CRON] Jadwal lama dihentikan.");
     }
 
     currentJob = cron.schedule(setting.cronString, () => {
       evaluateTargets();
     });
 
-    console.log(`[CRON] Penjadwalan Evaluasi Target aktif. Cron: ${setting.cronString} (${setting.frequency})`);
+    console.log(
+      `[CRON] Penjadwalan Evaluasi Target aktif. Cron: ${setting.cronString} (${setting.frequency})`,
+    );
   } catch (err) {
-    console.error('[CRON] Gagal menginisialisasi jadwal:', err);
+    console.error("[CRON] Gagal menginisialisasi jadwal:", err);
   }
 };
 
