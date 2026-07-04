@@ -28,7 +28,7 @@ export default function KinerjaKegiatan() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex items-center gap-4">
           <div className="bg-primary-100 text-primary-600 p-4 rounded-full">
-            <ClipboardList size={32} />
+            <CheckSquare size={36} />
           </div>
           <div>
             <p className="text-slate-500 font-bold text-lg uppercase">Total Rencana</p>
