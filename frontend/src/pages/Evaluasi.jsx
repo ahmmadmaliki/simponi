@@ -77,7 +77,7 @@ export default function Evaluasi() {
               />
               <Legend wrapperStyle={{fontSize: '18px', paddingTop: '20px'}} />
               <Bar dataKey="2025" name="Realisasi 2025" fill="#94a3b8" radius={[6, 6, 0, 0]} maxBarSize={80} />
-              <Bar dataKey="2026" name="Realisasi 2026" fill="#3b82f6" radius={[6, 6, 0, 0]} maxBarSize={80} />
+              <Bar dataKey="2026" name="Realisasi 2026" fill="#e11d48" radius={[6, 6, 0, 0]} maxBarSize={80} />
             </BarChart>
           </ResponsiveContainer>
         </div>

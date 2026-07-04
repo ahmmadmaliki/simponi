@@ -163,7 +163,7 @@ export default function Dashboard() {
                 <XAxis dataKey="name" tick={{ fontSize: 16 }} tickLine={false} axisLine={false} dy={10} />
                 <YAxis tick={{ fontSize: 16 }} tickLine={false} axisLine={false} dx={-10} />
                 <Tooltip contentStyle={{ borderRadius: '12px', fontSize: '18px', fontWeight: 'bold' }} />
-                <Area type="monotone" dataKey="pkb" name="PKB" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.2} strokeWidth={4} />
+                <Area type="monotone" dataKey="pkb" name="PKB" stroke="#e11d48" fill="#e11d48" fillOpacity={0.2} strokeWidth={4} />
                 <Area type="monotone" dataKey="bbnkb" name="BBNKB" stroke="#10b981" fill="#10b981" fillOpacity={0.2} strokeWidth={4} />
               </AreaChart>
             </ResponsiveContainer>
