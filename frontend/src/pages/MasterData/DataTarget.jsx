@@ -51,7 +51,7 @@ export default function DataTarget() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-blue-100 text-blue-700 rounded-xl">
+          <div className="p-3 bg-primary-100 text-primary-700 rounded-xl">
             <Target size={32} />
           </div>
           <div>
@@ -77,7 +77,7 @@ export default function DataTarget() {
           <button 
             onClick={() => fileInputRef.current?.click()}
             disabled={uploadMutation.isPending}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-bold transition-colors disabled:opacity-50"
           >
             <Upload size={20} />
             {uploadMutation.isPending ? 'Mengunggah...' : 'Unggah Excel'}

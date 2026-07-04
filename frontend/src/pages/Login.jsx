@@ -91,7 +91,7 @@ export default function Login() {
               />
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl text-blue-800 text-[15px]">
+            <div className="bg-primary-50 border border-primary-200 p-4 rounded-xl text-primary-800 text-[15px]">
               <strong>Demo Hint:</strong> Gunakan username <code>admin</code>{" "}
               atau <code>kadin</code> untuk melihat beranda.
             </div>

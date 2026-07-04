@@ -47,18 +47,18 @@ export default function RekomendasiTindakan() {
             <div 
               key={item.id} 
               className={`bg-white rounded-2xl shadow-sm border p-6 transition-all duration-300 hover:shadow-md ${
-                isOperasi ? 'border-l-4 border-l-red-500' : 'border-l-4 border-l-blue-500'
+                isOperasi ? 'border-l-4 border-l-orange-500' : 'border-l-4 border-l-primary-500'
               }`}
             >
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
-                  <div className={`p-3 rounded-xl ${isOperasi ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
+                  <div className={`p-3 rounded-xl ${isOperasi ? 'bg-orange-100 text-orange-600' : 'bg-primary-100 text-primary-600'}`}>
                     {isOperasi ? <ShieldAlert size={24} /> : <Lightbulb size={24} />}
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-slate-800">{item.kecamatan}</h3>
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1 ${
-                      isOperasi ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
+                      isOperasi ? 'bg-orange-100 text-orange-800' : 'bg-primary-100 text-primary-800'
                     }`}>
                       {item.tipe}
                     </span>

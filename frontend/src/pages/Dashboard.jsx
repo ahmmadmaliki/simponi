@@ -79,19 +79,19 @@ export default function Dashboard() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 border-t-8 border-t-blue-500 overflow-hidden">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 border-t-8 border-t-primary-500 overflow-hidden">
           <div className="flex justify-between items-start">
             <div className="min-w-0 pr-4">
               <p className="text-slate-500 font-bold text-lg xl:text-xl uppercase tracking-wider truncate" title="Target Opsen PKB">Realisasi Opsen PKB</p>
               <h3 className="text-3xl xl:text-4xl font-black text-slate-800 mt-2 truncate">{formatRupiah(realisasiPkb)}</h3>
             </div>
-            <div className="bg-blue-100 p-4 rounded-full text-blue-600 shrink-0">
+            <div className="bg-primary-100 p-4 rounded-full text-primary-600 shrink-0">
               <Target size={32} />
             </div>
           </div>
           <div className="mt-6">
             <div className="w-full bg-slate-200 rounded-full h-4">
-              <div className="bg-blue-500 h-4 rounded-full" style={{ width: `${Math.min(pkbPercent, 100)}%` }}></div>
+              <div className="bg-primary-500 h-4 rounded-full" style={{ width: `${Math.min(pkbPercent, 100)}%` }}></div>
             </div>
             <p className="mt-3 text-lg font-semibold text-slate-600">Terpenuhi: {pkbPercent.toFixed(1)}% dari {formatRupiah(targetPkb)}</p>
           </div>
@@ -196,10 +196,10 @@ export default function Dashboard() {
                   const totalRealisasiOpsen = item.opsenPkb + item.opsenBbnkb;
                   const percent = (totalRealisasiOpsen / item.target) * 100;
                   return (
-                    <tr key={item.id} className="hover:bg-blue-50 transition-colors">
+                    <tr key={item.id} className="hover:bg-primary-50 transition-colors">
                       <td className="p-4 text-lg font-bold text-slate-800 whitespace-nowrap">{item.name}</td>
                       <td className="p-4 text-base text-slate-600 whitespace-nowrap">{formatRupiah(item.pkbPokok)}</td>
-                      <td className="p-4 text-base text-blue-700 font-semibold whitespace-nowrap">{formatRupiah(item.opsenPkb)}</td>
+                      <td className="p-4 text-base text-primary-700 font-semibold whitespace-nowrap">{formatRupiah(item.opsenPkb)}</td>
                       <td className="p-4 text-base text-slate-600 whitespace-nowrap">{formatRupiah(item.bbnkbPokok)}</td>
                       <td className="p-4 text-base text-green-700 font-semibold whitespace-nowrap">{formatRupiah(item.opsenBbnkb)}</td>
                       <td className="p-4 text-base font-bold text-slate-800 whitespace-nowrap">{formatRupiah(totalRealisasiOpsen)}</td>

@@ -26,9 +26,9 @@ export default function KinerjaKegiatan() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-5">
-          <div className="bg-blue-100 text-blue-600 p-4 rounded-full">
-            <CheckSquare size={36} />
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex items-center gap-4">
+          <div className="bg-primary-100 text-primary-600 p-4 rounded-full">
+            <ClipboardList size={32} />
           </div>
           <div>
             <p className="text-slate-500 font-bold text-lg uppercase">Total Rencana</p>
@@ -88,14 +88,13 @@ export default function KinerjaKegiatan() {
                 </div>
 
                 <div className="bg-slate-100 rounded-full h-5 w-full mt-2 overflow-hidden shadow-inner">
-                  <div
-                    className={`h-full rounded-full ${progress >= 100 ? 'bg-green-500' : progress >= 50 ? 'bg-blue-500' : 'bg-yellow-500'}`}
+                  <div 
+                    className={`h-full rounded-full ${progress >= 100 ? 'bg-green-500' : progress >= 50 ? 'bg-primary-500' : 'bg-yellow-500'}`} 
                     style={{ width: `${Math.min(progress, 100)}%` }}
                   ></div>
                 </div>
-                <div className="flex justify-between mt-3 text-lg font-bold">
-                  <span className="text-slate-500">Progres Capaian</span>
-                  <span className={progress >= 100 ? 'text-green-600' : progress >= 50 ? 'text-blue-600' : 'text-yellow-600'}>
+                <div className="mt-2 text-right">
+                  <span className={progress >= 100 ? 'text-green-600' : progress >= 50 ? 'text-primary-600' : 'text-yellow-600'}>
                     {progress.toFixed(0)}%
                   </span>
                 </div>
