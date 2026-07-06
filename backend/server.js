@@ -330,12 +330,11 @@ app.post('/api/upload/target', upload.single('file'), async (req, res) => {
     const mapped = data.map(row => ({
       jenisOpsen: row['Jenis Opsen']?.toString() || 'PKB',
       tahun: Number(row['Tahun']) || new Date().getFullYear(),
-      triwulan: Number(row['Triwulan']) || 1,
       targetRupiah: Number(row['Target Rupiah']) || 0
     }));
     for (const row of mapped) {
       const existing = await prisma.targetOpsen.findFirst({
-        where: { jenisOpsen: row.jenisOpsen, tahun: row.tahun, triwulan: row.triwulan }
+        where: { jenisOpsen: row.jenisOpsen, tahun: row.tahun }
       });
       if (existing) {
         await prisma.targetOpsen.update({ where: { id: existing.id }, data: row });
@@ -394,7 +393,7 @@ const createTemplate = (res, filename, columns) => {
 
 app.get('/api/template/panen', (req, res) => createTemplate(res, 'Template_Panen', ['Kecamatan', 'Desa', 'Bulan', 'Tahun', 'Status Panen']));
 app.get('/api/template/tunggakan', (req, res) => createTemplate(res, 'Template_Tunggakan', ['Kecamatan', 'Desa', 'Bulan', 'Tahun', 'Rasio Tunggakan (%)']));
-app.get('/api/template/target', (req, res) => createTemplate(res, 'Template_Target', ['Jenis Opsen', 'Tahun', 'Triwulan', 'Target Rupiah']));
+app.get('/api/template/target', (req, res) => createTemplate(res, 'Template_Target', ['Jenis Opsen', 'Tahun', 'Target Rupiah']));
 app.get('/api/template/realisasi', (req, res) => createTemplate(res, 'Template_Realisasi', ['Kecamatan', 'Desa/Kelurahan', 'Tahun', 'Bulan', 'PKB Pokok', 'Opsen PKB', 'BBNKB Pokok', 'Opsen BBNKB', 'Total Realisasi Opsen']));
 
 // Manual Trigger for Notification Testing

@@ -93,22 +93,20 @@ export default function DataTarget() {
                 <th className="p-4">No</th>
                 <th className="p-4">Jenis Opsen</th>
                 <th className="p-4">Tahun</th>
-                <th className="p-4">Triwulan</th>
                 <th className="p-4">Target Rupiah</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
-                <tr><td colSpan="5" className="p-8 text-center text-slate-500">Memuat data...</td></tr>
+                <tr><td colSpan="4" className="p-8 text-center text-slate-500">Memuat data...</td></tr>
               ) : targets?.length === 0 ? (
-                <tr><td colSpan="5" className="p-8 text-center text-slate-500">Belum ada data. Silakan unggah Excel.</td></tr>
+                <tr><td colSpan="4" className="p-8 text-center text-slate-500">Belum ada data. Silakan unggah Excel.</td></tr>
               ) : (
                 targets?.map((item, index) => (
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                     <td className="p-4 text-slate-500">{index + 1}</td>
                     <td className="p-4 font-bold text-slate-800">{item.jenisOpsen}</td>
                     <td className="p-4 text-slate-600">{item.tahun}</td>
-                    <td className="p-4 text-slate-600">Triwulan {item.triwulan}</td>
                     <td className="p-4 font-medium text-slate-700">{formatRp(item.targetRupiah)}</td>
                   </tr>
                 ))

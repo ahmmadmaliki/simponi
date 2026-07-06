@@ -23,7 +23,6 @@ model TargetOpsen {
   id            Int      @id @default(autoincrement())
   jenisOpsen    String   // "PKB" or "BBNKB"
   tahun         Int
-  triwulan      Int      // 1, 2, 3, 4
   targetRupiah  Decimal  @db.Decimal(15, 2)
   createdAt     DateTime @default(now())
 }
