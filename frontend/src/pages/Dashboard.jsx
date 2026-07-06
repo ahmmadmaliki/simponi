@@ -80,7 +80,7 @@ export default function Dashboard() {
             <select
               value={filterTahun}
               onChange={(e) => setFilterTahun(e.target.value)}
-              className="flex-1 sm:flex-none px-3 py-3 md:py-4 rounded-xl border border-slate-300 text-sm md:text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold"
+              className="flex-1 sm:flex-none pl-4 pr-10 py-3 md:py-4 rounded-xl border border-slate-300 text-base md:text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold"
             >
               <option value="2025">2025</option>
               <option value="2026">2026</option>
@@ -90,7 +90,7 @@ export default function Dashboard() {
               <select
                 value={filterBulanMulai}
                 onChange={(e) => setFilterBulanMulai(e.target.value)}
-                className="flex-1 px-2 py-3 md:py-4 rounded-xl border border-slate-300 text-sm md:text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold sm:w-32"
+                className="flex-1 pl-4 pr-10 py-3 md:py-4 rounded-xl border border-slate-300 text-base md:text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold sm:w-40"
               >
                 {monthsList.map(m => <option key={`start-${m}`} value={m}>{m}</option>)}
               </select>
@@ -98,7 +98,7 @@ export default function Dashboard() {
               <select
                 value={filterBulanAkhir}
                 onChange={(e) => setFilterBulanAkhir(e.target.value)}
-                className="flex-1 px-2 py-3 md:py-4 rounded-xl border border-slate-300 text-sm md:text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold sm:w-32"
+                className="flex-1 pl-4 pr-10 py-3 md:py-4 rounded-xl border border-slate-300 text-base md:text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold sm:w-40"
               >
                 {monthsList.map(m => <option key={`end-${m}`} value={m}>{m}</option>)}
               </select>
