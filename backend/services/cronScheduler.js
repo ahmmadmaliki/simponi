@@ -16,9 +16,10 @@ const evaluateTargets = async () => {
     // Asumsi linear growth
     const expectedRatio = dayOfYear / 365;
 
-    // Hitung total realisasi PKB & BBNKB
+    // Hitung total realisasi PKB & BBNKB tahun berjalan
     const aggregateRealisasi = await prisma.realisasiOpsen.aggregate({
       _sum: { opsenPkb: true, opsenBbnkb: true },
+      where: { tahun: currentYear }
     });
     const realisasiPKB = Number(aggregateRealisasi._sum.opsenPkb || 0);
     const realisasiBBNKB = Number(aggregateRealisasi._sum.opsenBbnkb || 0);
