@@ -10,8 +10,8 @@ async function main() {
 
   await prisma.targetOpsen.createMany({
     data: [
-      { jenisOpsen: 'PKB', tahun: 2026, triwulan: 1, targetRupiah: 53729789600 },
-      { jenisOpsen: 'BBNKB', tahun: 2026, triwulan: 1, targetRupiah: 12803641100 }
+      { jenisOpsen: 'PKB', tahun: 2026, targetRupiah: 53729789600 },
+      { jenisOpsen: 'BBNKB', tahun: 2026, targetRupiah: 12803641100 }
     ]
   });
 
