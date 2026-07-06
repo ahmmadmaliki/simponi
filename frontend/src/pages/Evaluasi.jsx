@@ -9,6 +9,16 @@ export default function Evaluasi() {
   const [tahun1, setTahun1] = useState('2026');
   const [tahun2, setTahun2] = useState('2025');
 
+  const [inputOpsenType, setInputOpsenType] = useState('PKB');
+  const [inputTahun1, setInputTahun1] = useState('2026');
+  const [inputTahun2, setInputTahun2] = useState('2025');
+
+  const handleApplyFilter = () => {
+    setOpsenType(inputOpsenType);
+    setTahun1(inputTahun1);
+    setTahun2(inputTahun2);
+  };
+
   const { data: comparisonData, isLoading } = useQuery({
     queryKey: ['evaluasiKomparasi', tahun1, tahun2, opsenType],
     queryFn: async () => {
@@ -48,8 +58,8 @@ export default function Evaluasi() {
         <div className="flex-1 w-full relative">
            <label className="block text-lg font-bold text-primary-900 mb-2">Jenis Penerimaan Opsen</label>
            <select 
-             value={opsenType} 
-             onChange={(e) => setOpsenType(e.target.value)}
+             value={inputOpsenType} 
+             onChange={(e) => setInputOpsenType(e.target.value)}
              className="w-full pl-5 pr-10 py-4 rounded-xl border border-slate-300 text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-bold text-slate-800"
            >
              <option value="PKB">Pajak Kendaraan Bermotor (PKB)</option>
@@ -61,8 +71,8 @@ export default function Evaluasi() {
            <label className="block text-lg font-bold text-primary-900 mb-2">Tahun Perbandingan</label>
            <div className="flex items-center gap-3">
              <select 
-               value={tahun1} 
-               onChange={(e) => setTahun1(e.target.value)}
+               value={inputTahun1} 
+               onChange={(e) => setInputTahun1(e.target.value)}
                className="w-full px-5 py-4 rounded-xl border border-slate-300 text-lg bg-white font-bold text-slate-800"
              >
                <option value="2027">2027</option>
@@ -71,8 +81,8 @@ export default function Evaluasi() {
              </select>
              <span className="text-primary-800 font-bold px-2">VS</span>
              <select 
-               value={tahun2} 
-               onChange={(e) => setTahun2(e.target.value)}
+               value={inputTahun2} 
+               onChange={(e) => setInputTahun2(e.target.value)}
                className="w-full px-5 py-4 rounded-xl border border-slate-300 text-lg bg-white font-bold text-slate-800"
              >
                <option value="2026">2026</option>
@@ -82,7 +92,9 @@ export default function Evaluasi() {
            </div>
         </div>
         <div className="w-full lg:w-auto">
-          <button className="w-full flex items-center justify-center gap-3 bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-8 rounded-xl shadow-md transition-all text-xl">
+          <button 
+            onClick={handleApplyFilter}
+            className="w-full flex items-center justify-center gap-3 bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-8 rounded-xl shadow-md transition-all text-xl">
             <Search size={24} />
             Terapkan Filter
           </button>
