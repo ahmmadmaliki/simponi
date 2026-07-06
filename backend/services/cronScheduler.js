@@ -40,14 +40,18 @@ const evaluateTargets = async () => {
 
     const expectedRealisasi = targetTotal * expectedRatio;
 
-    if (realisasiTotal < expectedRealisasi) {
-      const formatRp = (num) =>
-        new Intl.NumberFormat("id-ID", {
-          style: "currency",
-          currency: "IDR",
-        }).format(num);
+    const formatRp = (num) =>
+      new Intl.NumberFormat("id-ID", {
+        style: "currency",
+        currency: "IDR",
+      }).format(num);
 
-      const message =
+    let message = "";
+    let emailSubject = "";
+
+    if (realisasiTotal < expectedRealisasi) {
+      emailSubject = "Peringatan Target Evaluasi SIOPTIMA";
+      message =
         `*SIOPTIMA ALERT - Evaluasi Akhir Pekan*\n\n` +
         `Yth. Bapak/Ibu,\n\n` +
         `Sistem mendeteksi bahwa *Realisasi Total Opsen* saat ini belum memenuhi ambang batas *Pro-Rata* yang diharapkan hingga hari ini.\n\n` +
@@ -57,27 +61,33 @@ const evaluateTargets = async () => {
         `Mohon segera ditindaklanjuti untuk strategi minggu depan.\n\n` +
         `👉 *LIHAT REKOMENDASI TINDAKAN DI SINI:*\n` +
         `${process.env.PUBLIC_URL || "http://localhost:5000"}/rekomendasi\n\nTerima kasih.`;
-
-      // Notify ALL users who have receiveNotif = true
-      const usersToAlert = await prisma.user.findMany({
-        where: { receiveNotif: true },
-      });
-
-      for (const user of usersToAlert) {
-        if (user.noWa) {
-          await sendWhatsAppAlert(user.noWa, message);
-        }
-
-        if (user.email) {
-          await sendEmailAlert(
-            user.email,
-            "Peringatan Target Evaluasi SIOPTIMA",
-            message,
-          );
-        }
-      }
     } else {
-      console.log("[CRON] Evaluasi aman, target terpenuhi.");
+      console.log("[CRON] Evaluasi aman, target terpenuhi. Mengirim notifikasi selamat.");
+      emailSubject = "Laporan Evaluasi SIOPTIMA - Target Aman";
+      message = 
+        `*SIOPTIMA REPORT - Evaluasi Akhir Pekan*\n\n` +
+        `Yth. Bapak/Ibu,\n\n` +
+        `Selamat! Sistem mendeteksi bahwa *Realisasi Total Opsen* saat ini dalam kondisi AMAN dan telah memenuhi ambang batas *Pro-Rata* yang diharapkan hingga hari ini.\n\n` +
+        `- *Ekspektasi Pro-Rata (Hari ke-${dayOfYear})*: ${formatRp(expectedRealisasi)}\n` +
+        `- *Realisasi Aktual*: ${formatRp(realisasiTotal)}\n` +
+        `- *Surplus/Kelebihan*: ${formatRp(realisasiTotal - expectedRealisasi)}\n\n` +
+        `Pertahankan kinerja baik ini untuk strategi minggu depan.\n\n` +
+        `👉 *LIHAT REKOMENDASI TINDAKAN DI SINI:*\n` +
+        `${process.env.PUBLIC_URL || "http://localhost:5000"}/rekomendasi\n\nTerima kasih.`;
+    }
+
+    // Notify ALL users who have receiveNotif = true
+    const usersToAlert = await prisma.user.findMany({
+      where: { receiveNotif: true },
+    });
+
+    for (const user of usersToAlert) {
+      if (user.noWa) {
+        await sendWhatsAppAlert(user.noWa, message);
+      }
+      if (user.email) {
+        await sendEmailAlert(user.email, emailSubject, message);
+      }
     }
   } catch (error) {
     console.error("[CRON] Error evaluating targets:", error);
