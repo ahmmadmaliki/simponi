@@ -75,32 +75,34 @@ export default function Dashboard() {
           <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800">Dashboard Evaluasi Target Opsen</h2>
           <p className="text-slate-500 mt-1 text-lg md:text-xl">Tahun Anggaran 2026</p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          <div className="flex gap-2 w-full sm:w-auto">
+        <div className="flex flex-col xl:flex-row gap-3 w-full md:w-auto mt-4 md:mt-0">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             <select
               value={filterTahun}
               onChange={(e) => setFilterTahun(e.target.value)}
-              className="px-4 py-3 md:py-4 rounded-xl border border-slate-300 text-base md:text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold"
+              className="flex-1 sm:flex-none px-3 py-3 md:py-4 rounded-xl border border-slate-300 text-sm md:text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold"
             >
               <option value="2025">2025</option>
               <option value="2026">2026</option>
               <option value="2027">2027</option>
             </select>
-            <select
-              value={filterBulanMulai}
-              onChange={(e) => setFilterBulanMulai(e.target.value)}
-              className="px-4 py-3 md:py-4 rounded-xl border border-slate-300 text-base md:text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold w-32"
-            >
-              {monthsList.map(m => <option key={`start-${m}`} value={m}>{m}</option>)}
-            </select>
-            <span className="flex items-center text-slate-500 font-bold">-</span>
-            <select
-              value={filterBulanAkhir}
-              onChange={(e) => setFilterBulanAkhir(e.target.value)}
-              className="px-4 py-3 md:py-4 rounded-xl border border-slate-300 text-base md:text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold w-32"
-            >
-              {monthsList.map(m => <option key={`end-${m}`} value={m}>{m}</option>)}
-            </select>
+            <div className="flex flex-1 sm:flex-none items-center gap-2 w-full sm:w-auto">
+              <select
+                value={filterBulanMulai}
+                onChange={(e) => setFilterBulanMulai(e.target.value)}
+                className="flex-1 px-2 py-3 md:py-4 rounded-xl border border-slate-300 text-sm md:text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold sm:w-32"
+              >
+                {monthsList.map(m => <option key={`start-${m}`} value={m}>{m}</option>)}
+              </select>
+              <span className="flex items-center text-slate-500 font-bold">-</span>
+              <select
+                value={filterBulanAkhir}
+                onChange={(e) => setFilterBulanAkhir(e.target.value)}
+                className="flex-1 px-2 py-3 md:py-4 rounded-xl border border-slate-300 text-sm md:text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold sm:w-32"
+              >
+                {monthsList.map(m => <option key={`end-${m}`} value={m}>{m}</option>)}
+              </select>
+            </div>
           </div>
           <button className="flex justify-center items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-xl shadow-md transition-all text-base md:text-lg w-full sm:w-auto">
             <Download size={20} className="md:w-6 md:h-6" />
