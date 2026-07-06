@@ -49,18 +49,41 @@ export default function Dashboard() {
     }
   });
 
-  const targetPkb = metrics?.targetPkb;
-  const targetBbnkb = metrics?.targetBbnkb;
-  const targetTotal = Number(targetPkb) + Number(targetBbnkb);
+  const targetPkb = Number(metrics?.targetPkb) || 0;
+  const targetBbnkb = Number(metrics?.targetBbnkb) || 0;
+  const targetTotal = targetPkb + targetBbnkb;
 
-  const realisasiPkb = Number(metrics?.realisasiPkb);
-  const realisasiBbnkb = Number(metrics?.realisasiBbnkb);
+  const realisasiPkb = Number(metrics?.realisasiPkb) || 0;
+  const realisasiBbnkb = Number(metrics?.realisasiBbnkb) || 0;
 
-  const pkbPercent = (realisasiPkb / targetPkb) * 100;
-  const bbnkbPercent = (realisasiBbnkb / targetBbnkb) * 100;
-  const totalPercent = ((realisasiPkb + realisasiBbnkb) / targetTotal) * 100;
+  const pkbPercent = targetPkb > 0 ? (realisasiPkb / targetPkb) * 100 : 0;
+  const bbnkbPercent = targetBbnkb > 0 ? (realisasiBbnkb / targetBbnkb) * 100 : 0;
+  const totalPercent = targetTotal > 0 ? ((realisasiPkb + realisasiBbnkb) / targetTotal) * 100 : 0;
 
   const sisaTarget = targetTotal - (realisasiPkb + realisasiBbnkb);
+
+  const handleDownloadExcel = () => {
+    if (!kecamatanData || kecamatanData.length === 0) return;
+    const headers = ['No', 'Kecamatan', 'Target PKB', 'Realisasi PKB', 'Target BBNKB', 'Realisasi BBNKB', 'Total Realisasi'];
+    const rows = kecamatanData.map((d, i) => [
+      i + 1,
+      d.name,
+      d.target || 0,
+      d.opsenPkb || 0,
+      d.target || 0,
+      d.opsenBbnkb || 0,
+      (d.opsenPkb || 0) + (d.opsenBbnkb || 0)
+    ]);
+    const csvContent = [headers.join(';'), ...rows.map(e => e.join(';'))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Dashboard_Evaluasi_Opsen_${filterTahun}_${filterBulanMulai}-${filterBulanAkhir}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const formatRupiah = (number) => {
     if (Number.isNaN(number)) return '-'
@@ -104,7 +127,9 @@ export default function Dashboard() {
               </select>
             </div>
           </div>
-          <button className="flex justify-center items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-xl shadow-md transition-all text-base md:text-lg w-full sm:w-auto">
+          <button 
+            onClick={handleDownloadExcel}
+            className="flex justify-center items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-xl shadow-md transition-all text-base md:text-lg w-full sm:w-auto">
             <Download size={20} className="md:w-6 md:h-6" />
             Unduh Excel
           </button>
