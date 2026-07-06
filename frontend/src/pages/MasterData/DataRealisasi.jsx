@@ -33,11 +33,11 @@ export default function DataRealisasi() {
   }) || [];
 
   const totals = filteredData.reduce((acc, curr) => ({
-    totalOpsen: acc.totalOpsen + (curr.totalOpsen || 0),
-    pkbPokok: acc.pkbPokok + (curr.pkbPokok || 0),
-    opsenPkb: acc.opsenPkb + (curr.opsenPkb || 0),
-    bbnkbPokok: acc.bbnkbPokok + (curr.bbnkbPokok || 0),
-    opsenBbnkb: acc.opsenBbnkb + (curr.opsenBbnkb || 0),
+    totalOpsen: acc.totalOpsen + (Number(curr.totalOpsen) || 0),
+    pkbPokok: acc.pkbPokok + (Number(curr.pkbPokok) || 0),
+    opsenPkb: acc.opsenPkb + (Number(curr.opsenPkb) || 0),
+    bbnkbPokok: acc.bbnkbPokok + (Number(curr.bbnkbPokok) || 0),
+    opsenBbnkb: acc.opsenBbnkb + (Number(curr.opsenBbnkb) || 0),
   }), { totalOpsen: 0, pkbPokok: 0, opsenPkb: 0, bbnkbPokok: 0, opsenBbnkb: 0 });
 
   const indexOfLastItem = currentPage * itemsPerPage;
