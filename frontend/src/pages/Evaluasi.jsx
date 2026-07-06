@@ -1,16 +1,41 @@
 import { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Search, Download, Calendar as CalendarIcon } from 'lucide-react';
-
-const MOCK_COMPARISON_DATA = [
-  { name: 'Triwulan I', "2025": 4000, "2026": 4500 },
-  { name: 'Triwulan II', "2025": 3000, "2026": 2800 },
-  { name: 'Triwulan III', "2025": 2000, "2026": null },
-  { name: 'Triwulan IV', "2025": 2780, "2026": null },
-];
+import { useQuery } from '@tanstack/react-query';
+import api from '../api/axios';
 
 export default function Evaluasi() {
   const [opsenType, setOpsenType] = useState('PKB');
+  const [tahun1, setTahun1] = useState('2026');
+  const [tahun2, setTahun2] = useState('2025');
+
+  const { data: comparisonData, isLoading } = useQuery({
+    queryKey: ['evaluasiKomparasi', tahun1, tahun2, opsenType],
+    queryFn: async () => {
+      const params = new URLSearchParams({ tahun1, tahun2, opsenType }).toString();
+      const res = await api.get(`/evaluasi/komparasi?${params}`);
+      return res.data;
+    }
+  });
+
+  const handleDownloadExcel = () => {
+    if (!comparisonData || comparisonData.length === 0) return;
+    const headers = ['Periode', `Realisasi ${tahun2} (Juta Rp)`, `Realisasi ${tahun1} (Juta Rp)`, 'Pertumbuhan (%)'];
+    const rows = comparisonData.map((item) => {
+      const growth = item[tahun1] ? (((item[tahun1] - item[tahun2]) / item[tahun2]) * 100).toFixed(1) : '-';
+      return [item.name, item[tahun2], item[tahun1] || 'Belum Berjalan', growth];
+    });
+    
+    const csvContent = [headers.join(';'), ...rows.map(e => e.join(';'))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Komparasi_${opsenType}_${tahun1}_vs_${tahun2}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
@@ -35,12 +60,24 @@ export default function Evaluasi() {
         <div className="flex-1 w-full">
            <label className="block text-lg font-bold text-primary-900 mb-2">Tahun Perbandingan</label>
            <div className="flex items-center gap-3">
-             <select className="w-full px-5 py-4 rounded-xl border border-slate-300 text-lg bg-white font-bold text-slate-800">
-               <option>2026</option>
+             <select 
+               value={tahun1} 
+               onChange={(e) => setTahun1(e.target.value)}
+               className="w-full px-5 py-4 rounded-xl border border-slate-300 text-lg bg-white font-bold text-slate-800"
+             >
+               <option value="2027">2027</option>
+               <option value="2026">2026</option>
+               <option value="2025">2025</option>
              </select>
              <span className="text-primary-800 font-bold px-2">VS</span>
-             <select className="w-full px-5 py-4 rounded-xl border border-slate-300 text-lg bg-white font-bold text-slate-800">
-               <option>2025</option>
+             <select 
+               value={tahun2} 
+               onChange={(e) => setTahun2(e.target.value)}
+               className="w-full px-5 py-4 rounded-xl border border-slate-300 text-lg bg-white font-bold text-slate-800"
+             >
+               <option value="2026">2026</option>
+               <option value="2025">2025</option>
+               <option value="2024">2024</option>
              </select>
            </div>
         </div>
@@ -59,7 +96,9 @@ export default function Evaluasi() {
               <CalendarIcon className="text-primary-600" size={28}/>
               Komparasi {opsenType} (Dalam Juta Rupiah)
            </h3>
-           <button className="flex items-center gap-2 border-2 border-slate-300 hover:bg-slate-50 text-slate-700 font-bold py-3 px-6 rounded-xl transition-all text-lg">
+           <button 
+             onClick={handleDownloadExcel}
+             className="flex items-center gap-2 border-2 border-slate-300 hover:bg-slate-50 text-slate-700 font-bold py-3 px-6 rounded-xl transition-all text-lg">
              <Download size={22} />
              Download Laporan Excel
            </button>
@@ -67,17 +106,17 @@ export default function Evaluasi() {
         
         <div className="h-[450px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={MOCK_COMPARISON_DATA} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            <BarChart data={comparisonData || []} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-              <XAxis dataKey="name" tick={{fontSize: 18, fontWeight: 'bold'}} tickLine={false} axisLine={false} dy={15} />
+              <XAxis dataKey="name" tick={{fontSize: 16, fontWeight: 'bold'}} tickLine={false} axisLine={false} dy={15} />
               <YAxis tick={{fontSize: 16}} tickLine={false} axisLine={false} dx={-10} />
               <Tooltip 
                 contentStyle={{ borderRadius: '12px', fontSize: '18px', fontWeight: 'bold' }}
                 cursor={{fill: '#f1f5f9'}}
               />
               <Legend wrapperStyle={{fontSize: '18px', paddingTop: '20px'}} />
-              <Bar dataKey="2025" name="Realisasi 2025" fill="#94a3b8" radius={[6, 6, 0, 0]} maxBarSize={80} />
-              <Bar dataKey="2026" name="Realisasi 2026" fill="#e11d48" radius={[6, 6, 0, 0]} maxBarSize={80} />
+              <Bar dataKey={tahun2} name={`Realisasi ${tahun2}`} fill="#94a3b8" radius={[6, 6, 0, 0]} maxBarSize={60} />
+              <Bar dataKey={tahun1} name={`Realisasi ${tahun1}`} fill="#e11d48" radius={[6, 6, 0, 0]} maxBarSize={60} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -91,20 +130,20 @@ export default function Evaluasi() {
               <thead>
                 <tr className="bg-slate-50 border-b-2 border-slate-200">
                   <th className="p-5 text-xl font-bold text-slate-700">Periode</th>
-                  <th className="p-5 text-xl font-bold text-slate-700">Realisasi 2025</th>
-                  <th className="p-5 text-xl font-bold text-slate-700">Realisasi 2026</th>
+                  <th className="p-5 text-xl font-bold text-slate-700">Realisasi {tahun2}</th>
+                  <th className="p-5 text-xl font-bold text-slate-700">Realisasi {tahun1}</th>
                   <th className="p-5 text-xl font-bold text-slate-700">Pertumbuhan (%)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {MOCK_COMPARISON_DATA.map((item, idx) => {
-                  const growth = item["2026"] ? (((item["2026"] - item["2025"]) / item["2025"]) * 100).toFixed(1) : null;
+                {(comparisonData || []).map((item, idx) => {
+                  const growth = (item[tahun1] && item[tahun2]) ? (((item[tahun1] - item[tahun2]) / item[tahun2]) * 100).toFixed(1) : null;
                   return (
                     <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                      <td className="p-5 text-xl font-bold text-slate-800">{item.name}</td>
-                      <td className="p-5 text-xl text-slate-600 drop-shadow-sm">Rp {item["2025"].toLocaleString('id-ID')} Jt</td>
-                      <td className="p-5 text-xl font-bold text-slate-800">
-                        {item["2026"] ? `Rp ${item["2026"].toLocaleString('id-ID')} Jt` : <span className="text-slate-400 italic font-normal">Belum Berjalan</span>}
+                      <td className="p-5 text-lg font-bold text-slate-800">{item.name}</td>
+                      <td className="p-5 text-lg text-slate-600 drop-shadow-sm">Rp {item[tahun2].toLocaleString('id-ID')} Jt</td>
+                      <td className="p-5 text-lg font-bold text-slate-800">
+                        {item[tahun1] ? `Rp ${item[tahun1].toLocaleString('id-ID')} Jt` : <span className="text-slate-400 italic font-normal">Belum Berjalan</span>}
                       </td>
                       <td className="p-5">
                         {growth !== null ? (

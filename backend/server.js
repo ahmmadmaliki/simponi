@@ -187,6 +187,53 @@ app.get('/api/dashboard/trend', async (req, res) => {
   }
 });
 
+// Evaluasi Komparasi Route
+app.get('/api/evaluasi/komparasi', async (req, res) => {
+  try {
+    const { tahun1, tahun2, opsenType } = req.query;
+    const t1 = Number(tahun1) || new Date().getFullYear();
+    const t2 = Number(tahun2) || t1 - 1;
+
+    const rawData = await prisma.realisasiOpsen.groupBy({
+      by: ['bulan', 'tahun'],
+      _sum: { opsenPkb: true, opsenBbnkb: true, totalOpsen: true },
+      where: { tahun: { in: [t1, t2] } }
+    });
+
+    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    const monthsMap = {
+      'Januari': 'Jan', 'Februari': 'Feb', 'Maret': 'Mar', 'April': 'Apr',
+      'Mei': 'Mei', 'Juni': 'Jun', 'Juli': 'Jul', 'Agustus': 'Agu',
+      'September': 'Sep', 'Oktober': 'Okt', 'November': 'Nov', 'Desember': 'Des'
+    };
+
+    const formattedData = months.map(month => {
+      const dataT1 = rawData.find(d => d.bulan === month && d.tahun === t1);
+      const dataT2 = rawData.find(d => d.bulan === month && d.tahun === t2);
+
+      const getValue = (data) => {
+        if (!data) return 0;
+        let val = 0;
+        if (opsenType === 'PKB') val = Number(data._sum.opsenPkb);
+        else if (opsenType === 'BBNKB') val = Number(data._sum.opsenBbnkb);
+        else val = Number(data._sum.totalOpsen);
+        return val / 1000000; // Return in millions
+      };
+
+      return {
+        name: monthsMap[month] || month.substring(0,3),
+        [t1]: getValue(dataT1),
+        [t2]: getValue(dataT2)
+      };
+    });
+
+    res.json(formattedData);
+  } catch (error) {
+     console.error(error);
+     res.status(500).json({ message: 'Terjadi kesalahan server' });
+  }
+});
+
 // Kinerja Kegiatan Route
 app.get('/api/kinerja', async (req, res) => {
   try {
