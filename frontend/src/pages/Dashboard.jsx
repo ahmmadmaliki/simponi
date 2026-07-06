@@ -16,20 +16,35 @@ import { useQuery } from '@tanstack/react-query';
 import api from '../api/axios';
 
 export default function Dashboard() {
-  const [filter, setFilter] = useState('Tahunan');
+  const [filterTahun, setFilterTahun] = useState(new Date().getFullYear().toString());
+  const [filterBulanMulai, setFilterBulanMulai] = useState('Januari');
+  const [filterBulanAkhir, setFilterBulanAkhir] = useState('Desember');
+
+  const monthsList = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
   const { data: metrics, isLoading: loadingMetrics } = useQuery({
-    queryKey: ['dashboardMetrics'],
+    queryKey: ['dashboardMetrics', filterTahun, filterBulanMulai, filterBulanAkhir],
     queryFn: async () => {
-      const res = await api.get('/dashboard/summary');
+      const params = new URLSearchParams({ tahun: filterTahun, bulanMulai: filterBulanMulai, bulanAkhir: filterBulanAkhir }).toString();
+      const res = await api.get(`/dashboard/summary?${params}`);
       return res.data;
     }
   });
 
   const { data: kecamatanData, isLoading: loadingKec } = useQuery({
-    queryKey: ['dashboardKecamatan'],
+    queryKey: ['dashboardKecamatan', filterTahun, filterBulanMulai, filterBulanAkhir],
     queryFn: async () => {
-      const res = await api.get('/dashboard/kecamatan');
+      const params = new URLSearchParams({ tahun: filterTahun, bulanMulai: filterBulanMulai, bulanAkhir: filterBulanAkhir }).toString();
+      const res = await api.get(`/dashboard/kecamatan?${params}`);
+      return res.data;
+    }
+  });
+
+  const { data: trendData, isLoading: loadingTrend } = useQuery({
+    queryKey: ['dashboardTrend', filterTahun, filterBulanMulai, filterBulanAkhir],
+    queryFn: async () => {
+      const params = new URLSearchParams({ tahun: filterTahun, bulanMulai: filterBulanMulai, bulanAkhir: filterBulanAkhir }).toString();
+      const res = await api.get(`/dashboard/trend?${params}`);
       return res.data;
     }
   });
@@ -61,15 +76,32 @@ export default function Dashboard() {
           <p className="text-slate-500 mt-1 text-lg md:text-xl">Tahun Anggaran 2026</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="px-4 md:px-6 py-3 md:py-4 rounded-xl border border-slate-300 text-base md:text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold w-full sm:w-auto"
-          >
-            <option value="Tahunan">Tampilan Tahunan</option>
-            <option value="Semester">Tampilan Semester</option>
-            <option value="Triwulan">Tampilan Triwulan</option>
-          </select>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <select
+              value={filterTahun}
+              onChange={(e) => setFilterTahun(e.target.value)}
+              className="px-4 py-3 md:py-4 rounded-xl border border-slate-300 text-base md:text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold"
+            >
+              <option value="2025">2025</option>
+              <option value="2026">2026</option>
+              <option value="2027">2027</option>
+            </select>
+            <select
+              value={filterBulanMulai}
+              onChange={(e) => setFilterBulanMulai(e.target.value)}
+              className="px-4 py-3 md:py-4 rounded-xl border border-slate-300 text-base md:text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold w-32"
+            >
+              {monthsList.map(m => <option key={`start-${m}`} value={m}>{m}</option>)}
+            </select>
+            <span className="flex items-center text-slate-500 font-bold">-</span>
+            <select
+              value={filterBulanAkhir}
+              onChange={(e) => setFilterBulanAkhir(e.target.value)}
+              className="px-4 py-3 md:py-4 rounded-xl border border-slate-300 text-base md:text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold w-32"
+            >
+              {monthsList.map(m => <option key={`end-${m}`} value={m}>{m}</option>)}
+            </select>
+          </div>
           <button className="flex justify-center items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-xl shadow-md transition-all text-base md:text-lg w-full sm:w-auto">
             <Download size={20} className="md:w-6 md:h-6" />
             Unduh Excel
@@ -158,7 +190,7 @@ export default function Dashboard() {
           </h3>
           <div className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={MOCK_MONTHLY_REVENUE}>
+              <AreaChart data={trendData || []}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                 <XAxis dataKey="name" tick={{ fontSize: 16 }} tickLine={false} axisLine={false} dy={10} />
                 <YAxis tick={{ fontSize: 16 }} tickLine={false} axisLine={false} dx={-10} />

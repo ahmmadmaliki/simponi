@@ -63,14 +63,37 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+const getMonthRange = (startMonth, endMonth) => {
+  const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  const startIndex = months.indexOf(startMonth);
+  const endIndex = months.indexOf(endMonth);
+  if (startIndex === -1 || endIndex === -1 || startIndex > endIndex) return months;
+  return months.slice(startIndex, endIndex + 1);
+};
+
 // Dashboard Metrics Route
 app.get('/api/dashboard/summary', async (req, res) => {
   try {
+    const { tahun, bulanMulai, bulanAkhir } = req.query;
+    
+    let whereClause = {};
+    if (tahun) whereClause.tahun = Number(tahun);
+    if (bulanMulai && bulanAkhir) {
+      whereClause.bulan = { in: getMonthRange(bulanMulai, bulanAkhir) };
+    }
+
     const aggregate = await prisma.realisasiOpsen.aggregate({
-      _sum: { opsenPkb: true, opsenBbnkb: true }
+      _sum: { opsenPkb: true, opsenBbnkb: true },
+      where: whereClause
     });
-    const targetPKB = await prisma.targetOpsen.aggregate({ _sum: { targetRupiah: true }, where: { jenisOpsen: 'PKB' } });
-    const targetBBNKB = await prisma.targetOpsen.aggregate({ _sum: { targetRupiah: true }, where: { jenisOpsen: 'BBNKB' } });
+
+    let targetWhere = {};
+    if (tahun) targetWhere.tahun = Number(tahun);
+    
+    // For targets, if it's quarterly, we might need a complex mapping or just sum the year's target for simplicity.
+    // Assuming target is yearly per triwulan, we'll just sum it up for the year for now.
+    const targetPKB = await prisma.targetOpsen.aggregate({ _sum: { targetRupiah: true }, where: { jenisOpsen: 'PKB', ...targetWhere } });
+    const targetBBNKB = await prisma.targetOpsen.aggregate({ _sum: { targetRupiah: true }, where: { jenisOpsen: 'BBNKB', ...targetWhere } });
 
     res.json({
       targetPkb: targetPKB._sum.targetRupiah || 0,
@@ -87,9 +110,17 @@ app.get('/api/dashboard/summary', async (req, res) => {
 // Kecamatan Data Route
 app.get('/api/dashboard/kecamatan', async (req, res) => {
   try {
+    const { tahun, bulanMulai, bulanAkhir } = req.query;
+    let whereClause = {};
+    if (tahun) whereClause.tahun = Number(tahun);
+    if (bulanMulai && bulanAkhir) {
+      whereClause.bulan = { in: getMonthRange(bulanMulai, bulanAkhir) };
+    }
+
     const rawData = await prisma.realisasiOpsen.groupBy({
       by: ['kecamatan'],
-      _sum: { pkbPokok: true, opsenPkb: true, bbnkbPokok: true, opsenBbnkb: true, totalOpsen: true }
+      _sum: { pkbPokok: true, opsenPkb: true, bbnkbPokok: true, opsenBbnkb: true, totalOpsen: true },
+      where: whereClause
     });
     
     if (rawData.length === 0) {
@@ -111,6 +142,47 @@ app.get('/api/dashboard/kecamatan', async (req, res) => {
 
     res.json(result);
   } catch (error) {
+     res.status(500).json({ message: 'Terjadi kesalahan server' });
+  }
+});
+
+// Trend Bulanan Route
+app.get('/api/dashboard/trend', async (req, res) => {
+  try {
+    const { tahun, bulanMulai, bulanAkhir } = req.query;
+    let whereClause = {};
+    if (tahun) whereClause.tahun = Number(tahun);
+    
+    const targetMonths = (bulanMulai && bulanAkhir) 
+      ? getMonthRange(bulanMulai, bulanAkhir) 
+      : ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+    whereClause.bulan = { in: targetMonths };
+
+    const rawData = await prisma.realisasiOpsen.groupBy({
+      by: ['bulan'],
+      _sum: { opsenPkb: true, opsenBbnkb: true },
+      where: whereClause
+    });
+
+    const monthsMap = {
+      'Januari': 'Jan', 'Februari': 'Feb', 'Maret': 'Mar', 'April': 'Apr',
+      'Mei': 'Mei', 'Juni': 'Jun', 'Juli': 'Jul', 'Agustus': 'Agu',
+      'September': 'Sep', 'Oktober': 'Okt', 'November': 'Nov', 'Desember': 'Des'
+    };
+
+    const formattedData = targetMonths.map(month => {
+      const dataForMonth = rawData.find(d => d.bulan === month);
+      return {
+        name: monthsMap[month] || month.substring(0,3),
+        pkb: dataForMonth ? (Number(dataForMonth._sum.opsenPkb) / 1000000) : 0, // In millions for chart readability
+        bbnkb: dataForMonth ? (Number(dataForMonth._sum.opsenBbnkb) / 1000000) : 0
+      };
+    });
+
+    res.json(formattedData);
+  } catch (error) {
+     console.error(error);
      res.status(500).json({ message: 'Terjadi kesalahan server' });
   }
 });
