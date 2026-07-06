@@ -155,7 +155,16 @@ app.post('/api/upload/panen', upload.single('file'), async (req, res) => {
       tahun: Number(row['Tahun']) || new Date().getFullYear(),
       statusPanen: row['Status Panen']?.toString() || 'Sedang'
     }));
-    await prisma.dataPanen.createMany({ data: mapped });
+    for (const row of mapped) {
+      const existing = await prisma.dataPanen.findFirst({
+        where: { kecamatan: row.kecamatan, desa: row.desa, bulan: row.bulan, tahun: row.tahun }
+      });
+      if (existing) {
+        await prisma.dataPanen.update({ where: { id: existing.id }, data: row });
+      } else {
+        await prisma.dataPanen.create({ data: row });
+      }
+    }
     res.json({ message: 'Data Panen berhasil diunggah' });
   } catch (error) { res.status(500).json({ message: 'Gagal upload Data Panen' }); }
 });
@@ -176,7 +185,16 @@ app.post('/api/upload/tunggakan', upload.single('file'), async (req, res) => {
       tahun: Number(row['Tahun']) || new Date().getFullYear(),
       rasioTunggakan: Number(row['Rasio Tunggakan (%)']) || 0
     }));
-    await prisma.dataTunggakan.createMany({ data: mapped });
+    for (const row of mapped) {
+      const existing = await prisma.dataTunggakan.findFirst({
+        where: { kecamatan: row.kecamatan, desa: row.desa, bulan: row.bulan, tahun: row.tahun }
+      });
+      if (existing) {
+        await prisma.dataTunggakan.update({ where: { id: existing.id }, data: row });
+      } else {
+        await prisma.dataTunggakan.create({ data: row });
+      }
+    }
     res.json({ message: 'Data Tunggakan berhasil diunggah' });
   } catch (error) { res.status(500).json({ message: 'Gagal upload Data Tunggakan' }); }
 });
@@ -196,7 +214,16 @@ app.post('/api/upload/target', upload.single('file'), async (req, res) => {
       triwulan: Number(row['Triwulan']) || 1,
       targetRupiah: Number(row['Target Rupiah']) || 0
     }));
-    await prisma.targetOpsen.createMany({ data: mapped });
+    for (const row of mapped) {
+      const existing = await prisma.targetOpsen.findFirst({
+        where: { jenisOpsen: row.jenisOpsen, tahun: row.tahun, triwulan: row.triwulan }
+      });
+      if (existing) {
+        await prisma.targetOpsen.update({ where: { id: existing.id }, data: row });
+      } else {
+        await prisma.targetOpsen.create({ data: row });
+      }
+    }
     res.json({ message: 'Data Target berhasil diunggah' });
   } catch (error) { res.status(500).json({ message: 'Gagal upload Data Target' }); }
 });
@@ -221,7 +248,16 @@ app.post('/api/upload/realisasi', upload.single('file'), async (req, res) => {
       opsenBbnkb: Number(row['Opsen BBNKB']) || 0,
       totalOpsen: Number(row['Total Realisasi Opsen']) || 0
     }));
-    await prisma.realisasiOpsen.createMany({ data: mappedData });
+    for (const row of mappedData) {
+      const existing = await prisma.realisasiOpsen.findFirst({
+        where: { kecamatan: row.kecamatan, desaKelurahan: row.desaKelurahan, tahun: row.tahun, bulan: row.bulan }
+      });
+      if (existing) {
+        await prisma.realisasiOpsen.update({ where: { id: existing.id }, data: row });
+      } else {
+        await prisma.realisasiOpsen.create({ data: row });
+      }
+    }
     res.json({ message: 'Data Realisasi berhasil diunggah' });
   } catch (error) { res.status(500).json({ message: 'Gagal upload Data Realisasi' }); }
 });
