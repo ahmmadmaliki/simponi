@@ -111,6 +111,7 @@ export default function Evaluasi() {
               <XAxis dataKey="name" tick={{fontSize: 16, fontWeight: 'bold'}} tickLine={false} axisLine={false} dy={15} />
               <YAxis tick={{fontSize: 16}} tickLine={false} axisLine={false} dx={-10} />
               <Tooltip 
+                formatter={(value) => `Rp ${Number(value).toLocaleString('id-ID', {minimumFractionDigits: 0, maximumFractionDigits: 1})} Jt`}
                 contentStyle={{ borderRadius: '12px', fontSize: '18px', fontWeight: 'bold' }}
                 cursor={{fill: '#f1f5f9'}}
               />
@@ -141,9 +142,9 @@ export default function Evaluasi() {
                   return (
                     <tr key={idx} className="hover:bg-slate-50 transition-colors">
                       <td className="p-5 text-lg font-bold text-slate-800">{item.name}</td>
-                      <td className="p-5 text-lg text-slate-600 drop-shadow-sm">Rp {item[tahun2].toLocaleString('id-ID')} Jt</td>
+                      <td className="p-5 text-lg text-slate-600 drop-shadow-sm">Rp {Number(item[tahun2]).toLocaleString('id-ID', {minimumFractionDigits: 0, maximumFractionDigits: 1})} Jt</td>
                       <td className="p-5 text-lg font-bold text-slate-800">
-                        {item[tahun1] ? `Rp ${item[tahun1].toLocaleString('id-ID')} Jt` : <span className="text-slate-400 italic font-normal">Belum Berjalan</span>}
+                        {item[tahun1] ? `Rp ${Number(item[tahun1]).toLocaleString('id-ID', {minimumFractionDigits: 0, maximumFractionDigits: 1})} Jt` : <span className="text-slate-400 italic font-normal">Belum Berjalan</span>}
                       </td>
                       <td className="p-5">
                         {growth !== null ? (
