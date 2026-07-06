@@ -17,12 +17,28 @@ export default function DataRealisasi() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterBulan, setFilterBulan] = useState('');
+  const [filterTahun, setFilterTahun] = useState('');
   const itemsPerPage = 10;
   
-  const filteredData = realisasi?.filter(item => 
-    item.kecamatan?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    item.desaKelurahan?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  const uniqueBulan = [...new Set(realisasi?.map(item => item.bulan) || [])].filter(Boolean);
+  const uniqueTahun = [...new Set(realisasi?.map(item => item.tahun) || [])].filter(Boolean);
+
+  const filteredData = realisasi?.filter(item => {
+    const matchSearch = item.kecamatan?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                        item.desaKelurahan?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchBulan = filterBulan === '' || item.bulan === filterBulan;
+    const matchTahun = filterTahun === '' || item.tahun?.toString() === filterTahun;
+    return matchSearch && matchBulan && matchTahun;
+  }) || [];
+
+  const totals = filteredData.reduce((acc, curr) => ({
+    totalOpsen: acc.totalOpsen + (curr.totalOpsen || 0),
+    pkbPokok: acc.pkbPokok + (curr.pkbPokok || 0),
+    opsenPkb: acc.opsenPkb + (curr.opsenPkb || 0),
+    bbnkbPokok: acc.bbnkbPokok + (curr.bbnkbPokok || 0),
+    opsenBbnkb: acc.opsenBbnkb + (curr.opsenBbnkb || 0),
+  }), { totalOpsen: 0, pkbPokok: 0, opsenPkb: 0, bbnkbPokok: 0, opsenBbnkb: 0 });
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -101,21 +117,39 @@ export default function DataRealisasi() {
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         {/* Search Bar */}
-        <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="relative w-full max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input 
-              type="text"
-              placeholder="Cari kecamatan atau desa..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-            />
+        <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:max-w-2xl">
+            <div className="relative w-full sm:w-1/2 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input 
+                type="text"
+                placeholder="Cari kecamatan atau desa..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+              />
+            </div>
+            <select 
+              value={filterBulan}
+              onChange={(e) => { setFilterBulan(e.target.value); setCurrentPage(1); }}
+              className="w-full sm:w-1/4 px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
+              <option value="">Semua Bulan</option>
+              {uniqueBulan.map(b => <option key={b} value={b}>{b}</option>)}
+            </select>
+            <select 
+              value={filterTahun}
+              onChange={(e) => { setFilterTahun(e.target.value); setCurrentPage(1); }}
+              className="w-full sm:w-1/4 px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
+              <option value="">Semua Tahun</option>
+              {uniqueTahun.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
           </div>
-          <div className="text-sm text-slate-500 font-medium">
+          <div className="text-sm text-slate-500 font-medium whitespace-nowrap">
             Total Data: {filteredData.length}
           </div>
         </div>
@@ -156,6 +190,18 @@ export default function DataRealisasi() {
                 ))
               )}
             </tbody>
+            {filteredData.length > 0 && (
+              <tfoot className="bg-slate-50 border-t-2 border-slate-200">
+                <tr>
+                  <td colSpan="4" className="p-4 text-right font-extrabold text-slate-700">TOTAL KESELURUHAN:</td>
+                  <td className="p-4 font-extrabold text-green-700">{formatRp(totals.totalOpsen)}</td>
+                  <td className="p-4 font-bold text-slate-700">{formatRp(totals.pkbPokok)}</td>
+                  <td className="p-4 font-bold text-slate-800">{formatRp(totals.opsenPkb)}</td>
+                  <td className="p-4 font-bold text-slate-700">{formatRp(totals.bbnkbPokok)}</td>
+                  <td className="p-4 font-bold text-slate-800">{formatRp(totals.opsenBbnkb)}</td>
+                </tr>
+              </tfoot>
+            )}
           </table>
         </div>
         
