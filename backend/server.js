@@ -166,18 +166,30 @@ app.get("/api/dashboard/summary", async (req, res) => {
 });
 
 const monthMap = {
-  'Januari': '01', 'Februari': '02', 'Maret': '03', 'April': '04', 'Mei': '05', 'Juni': '06',
-  'Juli': '07', 'Agustus': '08', 'September': '09', 'Oktober': '10', 'November': '11', 'Desember': '12'
+  Januari: "01",
+  Februari: "02",
+  Maret: "03",
+  April: "04",
+  Mei: "05",
+  Juni: "06",
+  Juli: "07",
+  Agustus: "08",
+  September: "09",
+  Oktober: "10",
+  November: "11",
+  Desember: "12",
 };
 
 const decodeBapendaResponse = (responseData) => {
   if (!responseData) return [];
-  if (typeof responseData.data === 'string') {
+  if (typeof responseData.data === "string") {
     try {
-      const decodedStr = Buffer.from(responseData.data, 'base64').toString('utf-8');
+      const decodedStr = Buffer.from(responseData.data, "base64").toString(
+        "utf-8",
+      );
       return JSON.parse(decodedStr);
     } catch (e) {
-      console.error('Error decoding base64:', e);
+      console.error("Error decoding base64:", e);
       return [];
     }
   }
@@ -211,6 +223,7 @@ app.get("/api/dashboard/live-metrics", async (req, res) => {
     const paramsPayload = {
       blbayar_awal: `${tahun}-${mmMulai}`,
       blbayar_akhir: `${tahun}-${mmAkhir}`,
+      kode_kota: process.env.BAPENDA_KODE_KOTA || ""
     };
 
     const response = await axios.get(
@@ -223,8 +236,6 @@ app.get("/api/dashboard/live-metrics", async (req, res) => {
         },
       },
     );
-
-    console.log("Live Metrics Response Raw Data Type:", typeof response.data?.data);
 
     const liveData = decodeBapendaResponse(response.data);
     let realisasiPkb = 0;
@@ -480,28 +491,24 @@ app.get("/api/evaluasi/live-komparasi", async (req, res) => {
     const token = await getBapendaToken();
 
     // Fetch Data Tahun 1
-    const resT1 = await axios.get(
-      "https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total",
-      {
-        params: {
-          blbayar_awal: `${t1}-01`,
-          blbayar_akhir: `${t1}-12`,
-        },
-        headers: { 'Authorization': `Bearer ${token}` } 
+    const resT1 = await axios.get('https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total', {
+      params: {
+        blbayar_awal: `${t1}-01`,
+        blbayar_akhir: `${t1}-12`,
+        kode_kota: process.env.BAPENDA_KODE_KOTA || ""
       },
-    );
-
+      headers: { 'Authorization': `Bearer ${token}` } 
+    });
+    
     // Fetch Data Tahun 2
-    const resT2 = await axios.get(
-      "https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total",
-      {
-        params: {
-          blbayar_awal: `${t2}-01`,
-          blbayar_akhir: `${t2}-12`,
-        },
-        headers: { 'Authorization': `Bearer ${token}` } 
+    const resT2 = await axios.get('https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total', {
+      params: {
+        blbayar_awal: `${t2}-01`,
+        blbayar_akhir: `${t2}-12`,
+        kode_kota: process.env.BAPENDA_KODE_KOTA || ""
       },
-    );
+      headers: { 'Authorization': `Bearer ${token}` } 
+    });
 
     const dataT1 = decodeBapendaResponse(resT1.data);
     const dataT2 = decodeBapendaResponse(resT2.data);
