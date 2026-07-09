@@ -11,6 +11,33 @@ import { fileURLToPath } from 'url';
 
 import { waClient } from './services/notificationService.js';
 import { startCronJobs, evaluateTargets } from './services/cronScheduler.js';
+import axios from 'axios';
+
+let BAPENDA_TOKEN = null;
+let TOKEN_EXPIRES_AT = 0;
+
+const getBapendaToken = async () => {
+  if (BAPENDA_TOKEN && Date.now() < TOKEN_EXPIRES_AT) {
+    return BAPENDA_TOKEN;
+  }
+  
+  try {
+    const response = await axios.post('https://simonas.dipendajatim.go.id/rest/oauth/token', {
+      grant_type: 'client_credentials',
+      client_id: process.env.BAPENDA_CLIENT_ID,
+      client_secret: process.env.BAPENDA_CLIENT_SECRET
+    }, {
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
+    });
+    
+    BAPENDA_TOKEN = response.data.access_token;
+    TOKEN_EXPIRES_AT = Date.now() + ((response.data.expires_in || 3600) * 1000) - 60000; // buffer 1 minute
+    return BAPENDA_TOKEN;
+  } catch (error) {
+    console.error('Failed to get Bapenda Token:', error.response?.data || error.message);
+    throw new Error('Gagal mendapatkan token Bapenda Jatim');
+  }
+};
 
 dotenv.config();
 
@@ -104,6 +131,62 @@ app.get('/api/dashboard/summary', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Terjadi kesalahan' });
+  }
+});
+
+const monthMap = {
+  'Januari': '01', 'Februari': '02', 'Maret': '03', 'April': '04', 'Mei': '05', 'Juni': '06',
+  'Juli': '07', 'Agustus': '08', 'September': '09', 'Oktober': '10', 'November': '11', 'Desember': '12'
+};
+
+// Live Dashboard Metrics Proxy
+app.get('/api/dashboard/live-metrics', async (req, res) => {
+  try {
+    const { tahun, bulanMulai, bulanAkhir } = req.query;
+    
+    // Parse target from local DB as usual
+    let targetWhere = {};
+    if (tahun) targetWhere.tahun = Number(tahun);
+    const targetPKB = await prisma.targetOpsen.aggregate({ _sum: { targetRupiah: true }, where: { jenisOpsen: 'PKB', ...targetWhere } });
+    const targetBBNKB = await prisma.targetOpsen.aggregate({ _sum: { targetRupiah: true }, where: { jenisOpsen: 'BBNKB', ...targetWhere } });
+
+    // Fetch Live Data from Jatim
+    const token = await getBapendaToken();
+    const mmMulai = monthMap[bulanMulai] || '01';
+    const mmAkhir = monthMap[bulanAkhir] || '12';
+    
+    const payload = {
+      blbayar_awal: `${tahun}-${mmMulai}`,
+      blbayar_akhir: `${tahun}-${mmAkhir}`
+    };
+
+    const response = await axios.post('https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total', payload, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const liveData = response.data || [];
+    let realisasiPkb = 0;
+    let realisasiBbnkb = 0;
+
+    liveData.forEach(item => {
+      realisasiPkb += Number(item.total_opsen_pkb_tgbayar) || 0;
+      realisasiBbnkb += Number(item.total_opsen_bbn_tgbayar) || 0;
+    });
+
+    res.json({
+      targetPkb: targetPKB._sum.targetRupiah || 0,
+      targetBbnkb: targetBBNKB._sum.targetRupiah || 0,
+      realisasiPkb: realisasiPkb,
+      realisasiBbnkb: realisasiBbnkb,
+      isLive: true
+    });
+  } catch (error) {
+    console.error('Error fetching live metrics:', error.message);
+    res.status(500).json({ message: 'Gagal menarik data Live dari Bapenda Jatim' });
   }
 });
 
@@ -255,6 +338,64 @@ app.get('/api/kinerja', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Terjadi kesalahan server' });
+  }
+});
+
+// Evaluasi Komparasi Live Proxy
+app.get('/api/evaluasi/live-komparasi', async (req, res) => {
+  try {
+    const { tahun1, tahun2, opsenType } = req.query;
+    const t1 = Number(tahun1) || new Date().getFullYear();
+    const t2 = Number(tahun2) || t1 - 1;
+
+    const token = await getBapendaToken();
+    
+    // Fetch Data Tahun 1
+    const resT1 = await axios.post('https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total', {
+      blbayar_awal: `${t1}-01`,
+      blbayar_akhir: `${t1}-12`
+    }, { headers: { 'Authorization': `Bearer ${token}` } });
+    
+    // Fetch Data Tahun 2
+    const resT2 = await axios.post('https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total', {
+      blbayar_awal: `${t2}-01`,
+      blbayar_akhir: `${t2}-12`
+    }, { headers: { 'Authorization': `Bearer ${token}` } });
+
+    const dataT1 = resT1.data || [];
+    const dataT2 = resT2.data || [];
+
+    const result = [];
+    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+    months.forEach((m, idx) => {
+      const monthNumStr = String(idx + 1);
+      
+      const filterT1 = dataT1.filter(d => String(d.bulan) === monthNumStr);
+      let sumT1 = 0;
+      filterT1.forEach(d => {
+        if (opsenType === 'PKB' || opsenType === 'TOTAL') sumT1 += Number(d.total_opsen_pkb_tgbayar) || 0;
+        if (opsenType === 'BBNKB' || opsenType === 'TOTAL') sumT1 += Number(d.total_opsen_bbn_tgbayar) || 0;
+      });
+
+      const filterT2 = dataT2.filter(d => String(d.bulan) === monthNumStr);
+      let sumT2 = 0;
+      filterT2.forEach(d => {
+        if (opsenType === 'PKB' || opsenType === 'TOTAL') sumT2 += Number(d.total_opsen_pkb_tgbayar) || 0;
+        if (opsenType === 'BBNKB' || opsenType === 'TOTAL') sumT2 += Number(d.total_opsen_bbn_tgbayar) || 0;
+      });
+
+      result.push({
+        name: m,
+        [t1]: sumT1,
+        [t2]: sumT2
+      });
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching live evaluasi:', error.message);
+    res.status(500).json({ message: 'Gagal menarik komparasi Live dari Bapenda Jatim' });
   }
 });
 

@@ -64,7 +64,7 @@ export default function Dashboard() {
         bulanMulai: filterBulanMulai,
         bulanAkhir: filterBulanAkhir,
       }).toString();
-      const res = await api.get(`/dashboard/summary?${params}`);
+      const res = await api.get(`/dashboard/live-metrics?${params}`);
       return res.data;
     },
   });

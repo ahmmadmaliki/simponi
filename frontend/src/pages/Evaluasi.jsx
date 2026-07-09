@@ -23,7 +23,7 @@ export default function Evaluasi() {
     queryKey: ['evaluasiKomparasi', tahun1, tahun2, opsenType],
     queryFn: async () => {
       const params = new URLSearchParams({ tahun1, tahun2, opsenType }).toString();
-      const res = await api.get(`/evaluasi/komparasi?${params}`);
+      const res = await api.get(`/evaluasi/live-komparasi?${params}`);
       return res.data;
     }
   });
@@ -48,9 +48,12 @@ export default function Evaluasi() {
   };
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 relative overflow-hidden">
+        <div className="absolute top-0 right-0 bg-purple-500 text-white text-xs font-bold px-4 py-1 rounded-bl-xl animate-pulse shadow-md">
+          🟢 Tersinkronisasi Live Jatim
+        </div>
         <h2 className="text-3xl font-extrabold text-slate-800">Evaluasi & Analisis Komparatif (YoY)</h2>
-        <p className="text-slate-500 mt-2 text-xl">Bandingkan perolehan pendapatan tahun ini dengan tahun sebelumnya.</p>
+        <p className="text-slate-500 mt-2 text-xl">Bandingkan perolehan pendapatan tahun ini dengan tahun sebelumnya secara real-time.</p>
       </div>
 
       {/* Filter Bar */}
