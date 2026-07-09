@@ -202,22 +202,18 @@ app.get("/api/dashboard/live-metrics", async (req, res) => {
     const mmMulai = monthMap[bulanMulai] || "01";
     const mmAkhir = monthMap[bulanAkhir] || "12";
 
-    const payload = {
+    const paramsPayload = {
       blbayar_awal: `${tahun}-${mmMulai}`,
-      blbayar_akhir: `${tahun}-${mmAkhir}`,
+      blbayar_akhir: `${tahun}-${mmAkhir}`
     };
 
-    const response = await axios.post(
-      "https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total",
-      payload,
-      {
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
+    const response = await axios.get('https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total', {
+      params: paramsPayload,
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
 
     console.log("Live Metrics Response:", response.data);
 
@@ -238,6 +234,10 @@ app.get("/api/dashboard/live-metrics", async (req, res) => {
       isLive: true,
     });
   } catch (error) {
+    console.error(
+      "Error fetching live metrics:",
+      error.response?.data || error.message,
+    );
     console.error("Error fetching live metrics:", error.message);
     res
       .status(500)
@@ -475,24 +475,22 @@ app.get("/api/evaluasi/live-komparasi", async (req, res) => {
     const token = await getBapendaToken();
 
     // Fetch Data Tahun 1
-    const resT1 = await axios.post(
-      "https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total",
-      {
+    const resT1 = await axios.get('https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total', {
+      params: {
         blbayar_awal: `${t1}-01`,
-        blbayar_akhir: `${t1}-12`,
+        blbayar_akhir: `${t1}-12`
       },
-      { headers: { Authorization: `Bearer ${token}` } },
-    );
-
+      headers: { 'Authorization': `Bearer ${token}` } 
+    });
+    
     // Fetch Data Tahun 2
-    const resT2 = await axios.post(
-      "https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total",
-      {
+    const resT2 = await axios.get('https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total', {
+      params: {
         blbayar_awal: `${t2}-01`,
-        blbayar_akhir: `${t2}-12`,
+        blbayar_akhir: `${t2}-12`
       },
-      { headers: { Authorization: `Bearer ${token}` } },
-    );
+      headers: { 'Authorization': `Bearer ${token}` } 
+    });
 
     const dataT1 = resT1.data || [];
     const dataT2 = resT2.data || [];
@@ -1052,11 +1050,13 @@ app.listen(PORT, () => {
 
 // --- GRACEFUL SHUTDOWN (Mencegah Zombie Process) ---
 const gracefulShutdown = async (signal) => {
-  console.log(`\n[SYSTEM] Menerima sinyal ${signal}. Menutup proses dengan aman agar tidak menjadi Zombie...`);
+  console.log(
+    `\n[SYSTEM] Menerima sinyal ${signal}. Menutup proses dengan aman agar tidak menjadi Zombie...`,
+  );
   try {
     // Menutup koneksi browser Chromium dari waClient secara paksa
     await waClient.destroy();
-    console.log('[SYSTEM] Browser WhatsApp berhasil ditutup.');
+    console.log("[SYSTEM] Browser WhatsApp berhasil ditutup.");
   } catch (error) {
     // Abaikan error jika waClient belum sempat terbuka
   }
@@ -1064,7 +1064,7 @@ const gracefulShutdown = async (signal) => {
 };
 
 // Menangkap sinyal terminate dari terminal (Ctrl+C)
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 // Menangkap sinyal restart mendadak dari nodemon
-process.on('SIGUSR2', () => gracefulShutdown('SIGUSR2'));
+process.on("SIGUSR2", () => gracefulShutdown("SIGUSR2"));
