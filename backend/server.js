@@ -198,59 +198,139 @@ const decodeBapendaResponse = (responseData) => {
   return [];
 };
 
+const generateHybridQueries = (startDateStr, endDateStr) => {
+  const start = new Date(startDateStr);
+  const end = new Date(endDateStr);
+  const queries = { months: null, dailyChunks: [] };
+  if (start > end) return queries;
+
+  let firstFullMonthStart = new Date(start.getFullYear(), start.getMonth(), 1);
+  if (start.getDate() > 1) {
+    firstFullMonthStart = new Date(start.getFullYear(), start.getMonth() + 1, 1);
+  }
+
+  let lastFullMonthEnd = new Date(end.getFullYear(), end.getMonth() + 1, 0);
+  if (end.getDate() < lastFullMonthEnd.getDate()) {
+    lastFullMonthEnd = new Date(end.getFullYear(), end.getMonth(), 0);
+  }
+
+  const chunkDays = (s, e) => {
+    let current = new Date(s);
+    const chunks = [];
+    while (current <= e) {
+      let chunkEnd = new Date(current);
+      chunkEnd.setDate(current.getDate() + 6);
+      if (chunkEnd > e) chunkEnd = new Date(e);
+      const fmt = d => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const dt = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${dt}`;
+      };
+      chunks.push({ tgbayar_awal: fmt(current), tgbayar_akhir: fmt(chunkEnd) });
+      current = new Date(chunkEnd);
+      current.setDate(current.getDate() + 1);
+    }
+    return chunks;
+  };
+
+  if (firstFullMonthStart <= lastFullMonthEnd) {
+    const fmtMonth = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    queries.months = {
+      blbayar_awal: fmtMonth(firstFullMonthStart),
+      blbayar_akhir: fmtMonth(lastFullMonthEnd)
+    };
+    const prefixEnd = new Date(firstFullMonthStart);
+    prefixEnd.setDate(prefixEnd.getDate() - 1);
+    if (start <= prefixEnd) queries.dailyChunks.push(...chunkDays(start, prefixEnd));
+    const suffixStart = new Date(lastFullMonthEnd);
+    suffixStart.setDate(suffixStart.getDate() + 1);
+    if (suffixStart <= end) queries.dailyChunks.push(...chunkDays(suffixStart, end));
+  } else {
+    queries.dailyChunks.push(...chunkDays(start, end));
+  }
+  return queries;
+};
+
+const parseMonthsFromDates = (startStr, endStr) => {
+  const start = new Date(startStr);
+  const end = new Date(endStr);
+  const months = [];
+  const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+  if (start > end) return months;
+  let current = new Date(start.getFullYear(), start.getMonth(), 1);
+  const endLimit = new Date(end.getFullYear(), end.getMonth(), 1);
+  while (current <= endLimit) {
+    months.push(monthNames[current.getMonth()]);
+    current.setMonth(current.getMonth() + 1);
+  }
+  return months;
+};
+
 // Live Dashboard Metrics Proxy
 app.get("/api/dashboard/live-metrics", async (req, res) => {
   try {
-    const { tahun, bulanMulai, bulanAkhir } = req.query;
+    const { tglMulai, tglAkhir } = req.query;
+    if (!tglMulai || !tglAkhir) return res.status(400).json({ message: "tglMulai dan tglAkhir wajib diisi" });
 
-    // Parse target from local DB as usual
-    let targetWhere = {};
-    if (tahun) targetWhere.tahun = Number(tahun);
-    const targetPKB = await prisma.targetOpsen.aggregate({
-      _sum: { targetRupiah: true },
-      where: { jenisOpsen: "PKB", ...targetWhere },
-    });
-    const targetBBNKB = await prisma.targetOpsen.aggregate({
-      _sum: { targetRupiah: true },
-      where: { jenisOpsen: "BBNKB", ...targetWhere },
-    });
+    const tahunNum = new Date(tglMulai).getFullYear();
+    const targetPKB = await prisma.targetOpsen.aggregate({ _sum: { targetRupiah: true }, where: { jenisOpsen: "PKB", tahun: tahunNum } });
+    const targetBBNKB = await prisma.targetOpsen.aggregate({ _sum: { targetRupiah: true }, where: { jenisOpsen: "BBNKB", tahun: tahunNum } });
 
-    // Fetch Live Data from Jatim
     const token = await getBapendaToken();
-    const mmMulai = monthMap[bulanMulai] || "01";
-    const mmAkhir = monthMap[bulanAkhir] || "12";
+    const kodeKota = process.env.BAPENDA_KODE_KOTA || "";
+    const hybridQueries = generateHybridQueries(tglMulai, tglAkhir);
 
-    const paramsPayload = {
-      blbayar_awal: `${tahun}-${mmMulai}`,
-      blbayar_akhir: `${tahun}-${mmAkhir}`,
-      kode_kota: process.env.BAPENDA_KODE_KOTA || ""
-    };
-
-    const response = await axios.get(
-      "https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total",
-      {
-        params: paramsPayload,
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
-
-    const liveData = decodeBapendaResponse(response.data);
     let realisasiPkb = 0;
     let realisasiBbnkb = 0;
 
-    liveData.forEach((item) => {
-      realisasiPkb += Number(item.total_opsen_pkb_tgbayar) || 0;
-      realisasiBbnkb += Number(item.total_opsen_bbn_tgbayar) || 0;
-    });
+    const promises = [];
+
+    // 1. Query Total Bulanan (jika ada bulan penuh)
+    if (hybridQueries.months) {
+      promises.push(
+        axios.get("https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total", {
+          params: { ...hybridQueries.months, kode_kota: kodeKota },
+          headers: { Authorization: `Bearer ${token}` }
+        }).then(res => {
+          const data = decodeBapendaResponse(res.data);
+          data.forEach(item => {
+            realisasiPkb += Number(item.total_opsen_pkb_tgbayar) || 0;
+            realisasiBbnkb += Number(item.total_opsen_bbn_tgbayar) || 0;
+          });
+        })
+      );
+    }
+
+    // 2. Query Harian (PKB dan BBN secara terpisah) untuk hari sisa
+    for (const chunk of hybridQueries.dailyChunks) {
+      promises.push(
+        axios.get("https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/pkb", {
+          params: { ...chunk, kode_kota: kodeKota },
+          headers: { Authorization: `Bearer ${token}` }
+        }).then(res => {
+          const data = decodeBapendaResponse(res.data);
+          data.forEach(item => { realisasiPkb += Number(item.total_opsen_pkb_tgbayar) || 0; });
+        })
+      );
+      promises.push(
+        axios.get("https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/bbn", {
+          params: { ...chunk, kode_kota: kodeKota },
+          headers: { Authorization: `Bearer ${token}` }
+        }).then(res => {
+          const data = decodeBapendaResponse(res.data);
+          data.forEach(item => { realisasiBbnkb += Number(item.total_opsen_bbn_tgbayar) || 0; });
+        })
+      );
+    }
+
+    await Promise.all(promises);
 
     res.json({
       targetPkb: targetPKB._sum.targetRupiah || 0,
       targetBbnkb: targetBBNKB._sum.targetRupiah || 0,
-      realisasiPkb: realisasiPkb,
-      realisasiBbnkb: realisasiBbnkb,
+      realisasiPkb,
+      realisasiBbnkb,
       isLive: true,
     });
   } catch (error) {
@@ -264,11 +344,13 @@ app.get("/api/dashboard/live-metrics", async (req, res) => {
 // Kecamatan Data Route
 app.get("/api/dashboard/kecamatan", async (req, res) => {
   try {
-    const { tahun, bulanMulai, bulanAkhir } = req.query;
+    const { tglMulai, tglAkhir } = req.query;
     let whereClause = {};
-    if (tahun) whereClause.tahun = Number(tahun);
-    if (bulanMulai && bulanAkhir) {
-      whereClause.bulan = { in: getMonthRange(bulanMulai, bulanAkhir) };
+    if (tglMulai) {
+      whereClause.tahun = new Date(tglMulai).getFullYear();
+      if (tglAkhir) {
+        whereClause.bulan = { in: parseMonthsFromDates(tglMulai, tglAkhir) };
+      }
     }
 
     const rawData = await prisma.realisasiOpsen.groupBy({
@@ -325,27 +407,16 @@ app.get("/api/dashboard/kecamatan", async (req, res) => {
 // Trend Bulanan Route
 app.get("/api/dashboard/trend", async (req, res) => {
   try {
-    const { tahun, bulanMulai, bulanAkhir } = req.query;
+    const { tglMulai, tglAkhir } = req.query;
     let whereClause = {};
-    if (tahun) whereClause.tahun = Number(tahun);
+    if (tglMulai) {
+      whereClause.tahun = new Date(tglMulai).getFullYear();
+      if (tglAkhir) {
+        whereClause.bulan = { in: parseMonthsFromDates(tglMulai, tglAkhir) };
+      }
+    }
 
-    const targetMonths =
-      bulanMulai && bulanAkhir
-        ? getMonthRange(bulanMulai, bulanAkhir)
-        : [
-            "Januari",
-            "Februari",
-            "Maret",
-            "April",
-            "Mei",
-            "Juni",
-            "Juli",
-            "Agustus",
-            "September",
-            "Oktober",
-            "November",
-            "Desember",
-          ];
+    const targetMonths = tglMulai && tglAkhir ? parseMonthsFromDates(tglMulai, tglAkhir) : Object.keys(monthMap);
 
     whereClause.bulan = { in: targetMonths };
 
@@ -491,24 +562,30 @@ app.get("/api/evaluasi/live-komparasi", async (req, res) => {
     const token = await getBapendaToken();
 
     // Fetch Data Tahun 1
-    const resT1 = await axios.get('https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total', {
-      params: {
-        blbayar_awal: `${t1}-01`,
-        blbayar_akhir: `${t1}-12`,
-        kode_kota: process.env.BAPENDA_KODE_KOTA || ""
+    const resT1 = await axios.get(
+      "https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total",
+      {
+        params: {
+          blbayar_awal: `${t1}-01`,
+          blbayar_akhir: `${t1}-12`,
+          kode_kota: process.env.BAPENDA_KODE_KOTA || "",
+        },
+        headers: { Authorization: `Bearer ${token}` },
       },
-      headers: { 'Authorization': `Bearer ${token}` } 
-    });
-    
+    );
+
     // Fetch Data Tahun 2
-    const resT2 = await axios.get('https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total', {
-      params: {
-        blbayar_awal: `${t2}-01`,
-        blbayar_akhir: `${t2}-12`,
-        kode_kota: process.env.BAPENDA_KODE_KOTA || ""
+    const resT2 = await axios.get(
+      "https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total",
+      {
+        params: {
+          blbayar_awal: `${t2}-01`,
+          blbayar_akhir: `${t2}-12`,
+          kode_kota: process.env.BAPENDA_KODE_KOTA || "",
+        },
+        headers: { Authorization: `Bearer ${token}` },
       },
-      headers: { 'Authorization': `Bearer ${token}` } 
-    });
+    );
 
     const dataT1 = decodeBapendaResponse(resT1.data);
     const dataT2 = decodeBapendaResponse(resT2.data);

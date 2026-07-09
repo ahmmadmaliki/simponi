@@ -30,39 +30,25 @@ import { useQuery } from "@tanstack/react-query";
 import api from "../api/axios";
 
 export default function Dashboard() {
-  const [filterTahun, setFilterTahun] = useState(
-    new Date().getFullYear().toString(),
-  );
-  const [filterBulanMulai, setFilterBulanMulai] = useState("Januari");
-  const [filterBulanAkhir, setFilterBulanAkhir] = useState("Desember");
+  const getTodayStr = () => {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().split("T")[0];
+  };
 
-  const monthsList = [
-    "Januari",
-    "Februari",
-    "Maret",
-    "April",
-    "Mei",
-    "Juni",
-    "Juli",
-    "Agustus",
-    "September",
-    "Oktober",
-    "November",
-    "Desember",
-  ];
+  const [filterTglMulai, setFilterTglMulai] = useState("2026-01-01");
+  const [filterTglAkhir, setFilterTglAkhir] = useState(getTodayStr());
 
   const { data: metrics, isLoading: loadingMetrics } = useQuery({
     queryKey: [
       "dashboardMetrics",
-      filterTahun,
-      filterBulanMulai,
-      filterBulanAkhir,
+      filterTglMulai,
+      filterTglAkhir,
     ],
     queryFn: async () => {
       const params = new URLSearchParams({
-        tahun: filterTahun,
-        bulanMulai: filterBulanMulai,
-        bulanAkhir: filterBulanAkhir,
+        tglMulai: filterTglMulai,
+        tglAkhir: filterTglAkhir,
       }).toString();
       const res = await api.get(`/dashboard/live-metrics?${params}`);
       return res.data;
@@ -72,15 +58,13 @@ export default function Dashboard() {
   const { data: kecamatanData, isLoading: loadingKec } = useQuery({
     queryKey: [
       "dashboardKecamatan",
-      filterTahun,
-      filterBulanMulai,
-      filterBulanAkhir,
+      filterTglMulai,
+      filterTglAkhir,
     ],
     queryFn: async () => {
       const params = new URLSearchParams({
-        tahun: filterTahun,
-        bulanMulai: filterBulanMulai,
-        bulanAkhir: filterBulanAkhir,
+        tglMulai: filterTglMulai,
+        tglAkhir: filterTglAkhir,
       }).toString();
       const res = await api.get(`/dashboard/kecamatan?${params}`);
       return res.data;
@@ -90,15 +74,13 @@ export default function Dashboard() {
   const { data: trendData, isLoading: loadingTrend } = useQuery({
     queryKey: [
       "dashboardTrend",
-      filterTahun,
-      filterBulanMulai,
-      filterBulanAkhir,
+      filterTglMulai,
+      filterTglAkhir,
     ],
     queryFn: async () => {
       const params = new URLSearchParams({
-        tahun: filterTahun,
-        bulanMulai: filterBulanMulai,
-        bulanAkhir: filterBulanAkhir,
+        tglMulai: filterTglMulai,
+        tglAkhir: filterTglAkhir,
       }).toString();
       const res = await api.get(`/dashboard/trend?${params}`);
       return res.data;
@@ -150,7 +132,7 @@ export default function Dashboard() {
     link.href = url;
     link.setAttribute(
       "download",
-      `Dashboard_Evaluasi_Opsen_${filterTahun}_${filterBulanMulai}-${filterBulanAkhir}.csv`,
+      `Dashboard_Evaluasi_Opsen_${filterTglMulai}_to_${filterTglAkhir}.csv`,
     );
     document.body.appendChild(link);
     link.click();
@@ -179,42 +161,21 @@ export default function Dashboard() {
         </div>
         <div className="flex flex-col xl:flex-row gap-3 w-full md:w-auto mt-4 md:mt-0">
           <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-            <select
-              value={filterTahun}
-              onChange={(e) => setFilterTahun(e.target.value)}
-              className="flex-1 sm:flex-none pl-4 pr-10 py-3 md:py-4 rounded-xl border border-slate-300 text-base md:text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold"
-            >
-              <option value="2025">2025</option>
-              <option value="2026">2026</option>
-              <option value="2027">2027</option>
-            </select>
-            <div className="flex flex-1 sm:flex-none items-center gap-2 w-full sm:w-auto">
-              <select
-                value={filterBulanMulai}
-                onChange={(e) => setFilterBulanMulai(e.target.value)}
-                className="flex-1 pl-4 pr-10 py-3 md:py-4 rounded-xl border border-slate-300 text-base md:text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold sm:w-40"
-              >
-                {monthsList.map((m) => (
-                  <option key={`start-${m}`} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-              <span className="flex items-center text-slate-500 font-bold">
-                -
-              </span>
-              <select
-                value={filterBulanAkhir}
-                onChange={(e) => setFilterBulanAkhir(e.target.value)}
-                className="flex-1 pl-4 pr-10 py-3 md:py-4 rounded-xl border border-slate-300 text-base md:text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold sm:w-40"
-              >
-                {monthsList.map((m) => (
-                  <option key={`end-${m}`} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <input
+              type="date"
+              value={filterTglMulai}
+              onChange={(e) => setFilterTglMulai(e.target.value)}
+              className="flex-1 sm:flex-none pl-4 pr-4 py-3 md:py-4 rounded-xl border border-slate-300 text-base md:text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold"
+            />
+            <span className="flex items-center text-slate-500 font-bold mx-2">
+              s/d
+            </span>
+            <input
+              type="date"
+              value={filterTglAkhir}
+              onChange={(e) => setFilterTglAkhir(e.target.value)}
+              className="flex-1 sm:flex-none pl-4 pr-4 py-3 md:py-4 rounded-xl border border-slate-300 text-base md:text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold"
+            />
           </div>
           <button
             onClick={handleDownloadExcel}
