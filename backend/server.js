@@ -166,18 +166,24 @@ app.get("/api/dashboard/summary", async (req, res) => {
 });
 
 const monthMap = {
-  Januari: "01",
-  Februari: "02",
-  Maret: "03",
-  April: "04",
-  Mei: "05",
-  Juni: "06",
-  Juli: "07",
-  Agustus: "08",
-  September: "09",
-  Oktober: "10",
-  November: "11",
-  Desember: "12",
+  'Januari': '01', 'Februari': '02', 'Maret': '03', 'April': '04', 'Mei': '05', 'Juni': '06',
+  'Juli': '07', 'Agustus': '08', 'September': '09', 'Oktober': '10', 'November': '11', 'Desember': '12'
+};
+
+const decodeBapendaResponse = (responseData) => {
+  if (!responseData) return [];
+  if (typeof responseData.data === 'string') {
+    try {
+      const decodedStr = Buffer.from(responseData.data, 'base64').toString('utf-8');
+      return JSON.parse(decodedStr);
+    } catch (e) {
+      console.error('Error decoding base64:', e);
+      return [];
+    }
+  }
+  if (Array.isArray(responseData.data)) return responseData.data;
+  if (Array.isArray(responseData)) return responseData;
+  return [];
 };
 
 // Live Dashboard Metrics Proxy
@@ -204,20 +210,23 @@ app.get("/api/dashboard/live-metrics", async (req, res) => {
 
     const paramsPayload = {
       blbayar_awal: `${tahun}-${mmMulai}`,
-      blbayar_akhir: `${tahun}-${mmAkhir}`
+      blbayar_akhir: `${tahun}-${mmAkhir}`,
     };
 
-    const response = await axios.get('https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total', {
-      params: paramsPayload,
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
-    });
+    const response = await axios.get(
+      "https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total",
+      {
+        params: paramsPayload,
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
 
-    console.log("Live Metrics Response:", response.data);
+    console.log("Live Metrics Response Raw Data Type:", typeof response.data?.data);
 
-    const liveData = response.data || [];
+    const liveData = decodeBapendaResponse(response.data);
     let realisasiPkb = 0;
     let realisasiBbnkb = 0;
 
@@ -234,10 +243,6 @@ app.get("/api/dashboard/live-metrics", async (req, res) => {
       isLive: true,
     });
   } catch (error) {
-    console.error(
-      "Error fetching live metrics:",
-      error.response?.data || error.message,
-    );
     console.error("Error fetching live metrics:", error.message);
     res
       .status(500)
@@ -475,25 +480,31 @@ app.get("/api/evaluasi/live-komparasi", async (req, res) => {
     const token = await getBapendaToken();
 
     // Fetch Data Tahun 1
-    const resT1 = await axios.get('https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total', {
-      params: {
-        blbayar_awal: `${t1}-01`,
-        blbayar_akhir: `${t1}-12`
+    const resT1 = await axios.get(
+      "https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total",
+      {
+        params: {
+          blbayar_awal: `${t1}-01`,
+          blbayar_akhir: `${t1}-12`,
+        },
+        headers: { 'Authorization': `Bearer ${token}` } 
       },
-      headers: { 'Authorization': `Bearer ${token}` } 
-    });
-    
-    // Fetch Data Tahun 2
-    const resT2 = await axios.get('https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total', {
-      params: {
-        blbayar_awal: `${t2}-01`,
-        blbayar_akhir: `${t2}-12`
-      },
-      headers: { 'Authorization': `Bearer ${token}` } 
-    });
+    );
 
-    const dataT1 = resT1.data || [];
-    const dataT2 = resT2.data || [];
+    // Fetch Data Tahun 2
+    const resT2 = await axios.get(
+      "https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total",
+      {
+        params: {
+          blbayar_awal: `${t2}-01`,
+          blbayar_akhir: `${t2}-12`,
+        },
+        headers: { 'Authorization': `Bearer ${token}` } 
+      },
+    );
+
+    const dataT1 = decodeBapendaResponse(resT1.data);
+    const dataT2 = decodeBapendaResponse(resT2.data);
 
     const result = [];
     const months = [
