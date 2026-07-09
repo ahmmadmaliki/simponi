@@ -206,7 +206,11 @@ const generateHybridQueries = (startDateStr, endDateStr) => {
 
   let firstFullMonthStart = new Date(start.getFullYear(), start.getMonth(), 1);
   if (start.getDate() > 1) {
-    firstFullMonthStart = new Date(start.getFullYear(), start.getMonth() + 1, 1);
+    firstFullMonthStart = new Date(
+      start.getFullYear(),
+      start.getMonth() + 1,
+      1,
+    );
   }
 
   let lastFullMonthEnd = new Date(end.getFullYear(), end.getMonth() + 1, 0);
@@ -221,10 +225,10 @@ const generateHybridQueries = (startDateStr, endDateStr) => {
       let chunkEnd = new Date(current);
       chunkEnd.setDate(current.getDate() + 6);
       if (chunkEnd > e) chunkEnd = new Date(e);
-      const fmt = d => {
+      const fmt = (d) => {
         const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, '0');
-        const dt = String(d.getDate()).padStart(2, '0');
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const dt = String(d.getDate()).padStart(2, "0");
         return `${y}-${m}-${dt}`;
       };
       chunks.push({ tgbayar_awal: fmt(current), tgbayar_akhir: fmt(chunkEnd) });
@@ -235,50 +239,90 @@ const generateHybridQueries = (startDateStr, endDateStr) => {
   };
 
   if (firstFullMonthStart <= lastFullMonthEnd) {
-    const fmtMonth = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const fmtMonth = (d) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     queries.months = {
       blbayar_awal: fmtMonth(firstFullMonthStart),
-      blbayar_akhir: fmtMonth(lastFullMonthEnd)
+      blbayar_akhir: fmtMonth(lastFullMonthEnd),
     };
     const prefixEnd = new Date(firstFullMonthStart);
     prefixEnd.setDate(prefixEnd.getDate() - 1);
-    if (start <= prefixEnd) queries.dailyChunks.push(...chunkDays(start, prefixEnd));
+    if (start <= prefixEnd)
+      queries.dailyChunks.push(...chunkDays(start, prefixEnd));
     const suffixStart = new Date(lastFullMonthEnd);
     suffixStart.setDate(suffixStart.getDate() + 1);
-    if (suffixStart <= end) queries.dailyChunks.push(...chunkDays(suffixStart, end));
+    if (suffixStart <= end)
+      queries.dailyChunks.push(...chunkDays(suffixStart, end));
   } else {
     queries.dailyChunks.push(...chunkDays(start, end));
   }
   return queries;
 };
 
-const parseMonthsFromDates = (startStr, endStr) => {
-  const start = new Date(startStr);
-  const end = new Date(endStr);
-  const months = [];
-  const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-  if (start > end) return months;
-  let current = new Date(start.getFullYear(), start.getMonth(), 1);
-  const endLimit = new Date(end.getFullYear(), end.getMonth(), 1);
-  while (current <= endLimit) {
-    months.push(monthNames[current.getMonth()]);
-    current.setMonth(current.getMonth() + 1);
-  }
-  return months;
+const getMonthRange = (startStr, endStr) => {
+  const monthNames = [
+    "Januari",
+    "Februari",
+    "Maret",
+    "April",
+    "Mei",
+    "Juni",
+    "Juli",
+    "Agustus",
+    "September",
+    "Oktober",
+    "November",
+    "Desember",
+  ];
+  const startIndex = monthNames.indexOf(startStr);
+  const endIndex = monthNames.indexOf(endStr);
+  if (startIndex === -1 || endIndex === -1 || startIndex > endIndex) return [];
+  return monthNames.slice(startIndex, endIndex + 1);
 };
 
 // Live Dashboard Metrics Proxy
 app.get("/api/dashboard/live-metrics", async (req, res) => {
   try {
-    const { tglMulai, tglAkhir } = req.query;
-    if (!tglMulai || !tglAkhir) return res.status(400).json({ message: "tglMulai dan tglAkhir wajib diisi" });
+    const { tahun, bulanMulai, bulanAkhir } = req.query;
+    if (!tahun || !bulanMulai || !bulanAkhir)
+      return res
+        .status(400)
+        .json({ message: "tahun, bulanMulai dan bulanAkhir wajib diisi" });
 
-    const tahunNum = new Date(tglMulai).getFullYear();
-    const targetPKB = await prisma.targetOpsen.aggregate({ _sum: { targetRupiah: true }, where: { jenisOpsen: "PKB", tahun: tahunNum } });
-    const targetBBNKB = await prisma.targetOpsen.aggregate({ _sum: { targetRupiah: true }, where: { jenisOpsen: "BBNKB", tahun: tahunNum } });
+    const tahunNum = Number(tahun);
+    const targetPKB = await prisma.targetOpsen.aggregate({
+      _sum: { targetRupiah: true },
+      where: { jenisOpsen: "PKB", tahun: tahunNum },
+    });
+    const targetBBNKB = await prisma.targetOpsen.aggregate({
+      _sum: { targetRupiah: true },
+      where: { jenisOpsen: "BBNKB", tahun: tahunNum },
+    });
 
     const token = await getBapendaToken();
     const kodeKota = process.env.BAPENDA_KODE_KOTA || "";
+
+    const mmMulai = monthMap[bulanMulai] || "01";
+    const mmAkhir = monthMap[bulanAkhir] || "12";
+    const tglMulai = `${tahun}-${mmMulai}-01`;
+    
+    const lastDayOfMonth = new Date(tahunNum, Number(mmAkhir), 0).getDate();
+    let tglAkhirDate = new Date(tahunNum, Number(mmAkhir) - 1, lastDayOfMonth);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    
+    if (tglAkhirDate > today) {
+      tglAkhirDate = new Date();
+    }
+    
+    const fmtDateStr = (d) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const dt = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${dt}`;
+    };
+    const tglAkhir = fmtDateStr(tglAkhirDate);
+
     const hybridQueries = generateHybridQueries(tglMulai, tglAkhir);
 
     let realisasiPkb = 0;
@@ -289,38 +333,54 @@ app.get("/api/dashboard/live-metrics", async (req, res) => {
     // 1. Query Total Bulanan (jika ada bulan penuh)
     if (hybridQueries.months) {
       promises.push(
-        axios.get("https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total", {
-          params: { ...hybridQueries.months, kode_kota: kodeKota },
-          headers: { Authorization: `Bearer ${token}` }
-        }).then(res => {
-          const data = decodeBapendaResponse(res.data);
-          data.forEach(item => {
-            realisasiPkb += Number(item.total_opsen_pkb_tgbayar) || 0;
-            realisasiBbnkb += Number(item.total_opsen_bbn_tgbayar) || 0;
-          });
-        })
+        axios
+          .get(
+            "https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total",
+            {
+              params: { ...hybridQueries.months, kode_kota: kodeKota },
+              headers: { Authorization: `Bearer ${token}` },
+            },
+          )
+          .then((res) => {
+            const data = decodeBapendaResponse(res.data);
+            let totalPkb = 0;
+            data.forEach((item) => {
+              realisasiPkb += Number(item.total_opsen_pkb_tgbayar) || 0;
+              realisasiBbnkb += Number(item.total_opsen_bbn_tgbayar) || 0;
+              totalPkb += Number(item.total_opsen_pkb_tgbayar) || 0;
+            });
+            console.log("Total PKB from Bulanan:", totalPkb);
+          }),
       );
     }
 
     // 2. Query Harian (PKB dan BBN secara terpisah) untuk hari sisa
     for (const chunk of hybridQueries.dailyChunks) {
       promises.push(
-        axios.get("https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/pkb", {
-          params: { ...chunk, kode_kota: kodeKota },
-          headers: { Authorization: `Bearer ${token}` }
-        }).then(res => {
-          const data = decodeBapendaResponse(res.data);
-          data.forEach(item => { realisasiPkb += Number(item.total_opsen_pkb_tgbayar) || 0; });
-        })
+        axios
+          .get("https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/pkb", {
+            params: { ...chunk, kode_kota: kodeKota },
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          .then((res) => {
+            const data = decodeBapendaResponse(res.data);
+            data.forEach((item) => {
+              realisasiPkb += Number(item.opsen_pkb) || 0;
+            });
+          }),
       );
       promises.push(
-        axios.get("https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/bbn", {
-          params: { ...chunk, kode_kota: kodeKota },
-          headers: { Authorization: `Bearer ${token}` }
-        }).then(res => {
-          const data = decodeBapendaResponse(res.data);
-          data.forEach(item => { realisasiBbnkb += Number(item.total_opsen_bbn_tgbayar) || 0; });
-        })
+        axios
+          .get("https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/bbn", {
+            params: { ...chunk, kode_kota: kodeKota },
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          .then((res) => {
+            const data = decodeBapendaResponse(res.data);
+            data.forEach((item) => {
+              realisasiBbnkb += Number(item.opsen_bbn) || 0;
+            });
+          }),
       );
     }
 
@@ -344,13 +404,11 @@ app.get("/api/dashboard/live-metrics", async (req, res) => {
 // Kecamatan Data Route
 app.get("/api/dashboard/kecamatan", async (req, res) => {
   try {
-    const { tglMulai, tglAkhir } = req.query;
+    const { tahun, bulanMulai, bulanAkhir } = req.query;
     let whereClause = {};
-    if (tglMulai) {
-      whereClause.tahun = new Date(tglMulai).getFullYear();
-      if (tglAkhir) {
-        whereClause.bulan = { in: parseMonthsFromDates(tglMulai, tglAkhir) };
-      }
+    if (tahun) whereClause.tahun = Number(tahun);
+    if (bulanMulai && bulanAkhir) {
+      whereClause.bulan = { in: getMonthRange(bulanMulai, bulanAkhir) };
     }
 
     const rawData = await prisma.realisasiOpsen.groupBy({
@@ -407,16 +465,14 @@ app.get("/api/dashboard/kecamatan", async (req, res) => {
 // Trend Bulanan Route
 app.get("/api/dashboard/trend", async (req, res) => {
   try {
-    const { tglMulai, tglAkhir } = req.query;
+    const { tahun, bulanMulai, bulanAkhir } = req.query;
     let whereClause = {};
-    if (tglMulai) {
-      whereClause.tahun = new Date(tglMulai).getFullYear();
-      if (tglAkhir) {
-        whereClause.bulan = { in: parseMonthsFromDates(tglMulai, tglAkhir) };
-      }
-    }
+    if (tahun) whereClause.tahun = Number(tahun);
 
-    const targetMonths = tglMulai && tglAkhir ? parseMonthsFromDates(tglMulai, tglAkhir) : Object.keys(monthMap);
+    const targetMonths =
+      bulanMulai && bulanAkhir
+        ? getMonthRange(bulanMulai, bulanAkhir)
+        : Object.keys(monthMap);
 
     whereClause.bulan = { in: targetMonths };
 
