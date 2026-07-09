@@ -259,26 +259,7 @@ const generateHybridQueries = (startDateStr, endDateStr) => {
   return queries;
 };
 
-const getMonthRange = (startStr, endStr) => {
-  const monthNames = [
-    "Januari",
-    "Februari",
-    "Maret",
-    "April",
-    "Mei",
-    "Juni",
-    "Juli",
-    "Agustus",
-    "September",
-    "Oktober",
-    "November",
-    "Desember",
-  ];
-  const startIndex = monthNames.indexOf(startStr);
-  const endIndex = monthNames.indexOf(endStr);
-  if (startIndex === -1 || endIndex === -1 || startIndex > endIndex) return [];
-  return monthNames.slice(startIndex, endIndex + 1);
-};
+
 
 // Live Dashboard Metrics Proxy
 app.get("/api/dashboard/live-metrics", async (req, res) => {
