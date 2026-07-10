@@ -373,12 +373,17 @@ export default function Dashboard() {
                   dy={10}
                 />
                 <YAxis
+                  tickFormatter={(value) => new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(value)}
                   tick={{ fontSize: 16 }}
                   tickLine={false}
                   axisLine={false}
                   dx={-10}
                 />
                 <Tooltip
+                  formatter={(value, name) => [
+                    new Intl.NumberFormat("id-ID", { maximumFractionDigits: 1 }).format(value),
+                    name
+                  ]}
                   contentStyle={{
                     borderRadius: "12px",
                     fontSize: "18px",
