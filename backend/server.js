@@ -256,7 +256,6 @@ const generateHybridQueries = (startDateStr, endDateStr) => {
   } else {
     queries.dailyChunks.push(...chunkDays(start, end));
   }
-  }
   return queries;
 };
 
