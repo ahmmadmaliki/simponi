@@ -28,6 +28,7 @@ const MOCK_MONTHLY_REVENUE = [
 
 import { useQuery } from "@tanstack/react-query";
 import api from "../api/axios";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 export default function Dashboard() {
   const [filterTahun, setFilterTahun] = useState(
@@ -236,7 +237,7 @@ export default function Dashboard() {
                 Realisasi Opsen PKB
               </p>
               <h3 className="text-3xl xl:text-4xl font-black text-slate-800 mt-2 truncate">
-                {loadingMetrics ? "Loading..." : formatRupiah(realisasiPkb)}
+                {loadingMetrics ? <LoadingSpinner size={24} className="inline-flex" /> : formatRupiah(realisasiPkb)}
               </h3>
             </div>
             <div className="bg-primary-100 p-4 rounded-full text-primary-600 shrink-0">
@@ -251,8 +252,8 @@ export default function Dashboard() {
               ></div>
             </div>
             <p className="mt-3 text-lg font-semibold text-slate-600">
-              Terpenuhi: {loadingMetrics ? "Loading..." : pkbPercent.toFixed(1)}
-              % dari {loadingMetrics ? "Loading..." : formatRupiah(targetPkb)}
+              Terpenuhi: {loadingMetrics ? <LoadingSpinner size={16} className="inline-flex" /> : pkbPercent.toFixed(1)}
+              % dari {loadingMetrics ? <LoadingSpinner size={16} className="inline-flex" /> : formatRupiah(targetPkb)}
             </p>
           </div>
         </div>
@@ -267,7 +268,7 @@ export default function Dashboard() {
                 Realisasi Opsen BBNKB
               </p>
               <h3 className="text-3xl xl:text-4xl font-black text-slate-800 mt-2 truncate">
-                {loadingMetrics ? "Loading..." : formatRupiah(realisasiBbnkb)}
+                {loadingMetrics ? <LoadingSpinner size={24} className="inline-flex" /> : formatRupiah(realisasiBbnkb)}
               </h3>
             </div>
             <div className="bg-green-100 p-4 rounded-full text-green-600 shrink-0">
@@ -283,8 +284,8 @@ export default function Dashboard() {
             </div>
             <p className="mt-3 text-lg font-semibold text-slate-600">
               Terpenuhi:{" "}
-              {loadingMetrics ? "Loading..." : bbnkbPercent.toFixed(1)}% dari{" "}
-              {loadingMetrics ? "Loading..." : formatRupiah(targetBbnkb)}
+              {loadingMetrics ? <LoadingSpinner size={16} className="inline-flex" /> : bbnkbPercent.toFixed(1)}% dari{" "}
+              {loadingMetrics ? <LoadingSpinner size={16} className="inline-flex" /> : formatRupiah(targetBbnkb)}
             </p>
           </div>
         </div>
@@ -300,7 +301,7 @@ export default function Dashboard() {
               </p>
               <h3 className="text-3xl xl:text-4xl font-black text-slate-800 mt-2 truncate">
                 {loadingMetrics
-                  ? "Loading..."
+                  ? <LoadingSpinner size={24} className="inline-flex" />
                   : formatRupiah(realisasiPkb + realisasiBbnkb)}
               </h3>
             </div>
@@ -317,8 +318,8 @@ export default function Dashboard() {
             </div>
             <p className="mt-3 text-lg font-semibold text-slate-600">
               Terpenuhi:{" "}
-              {loadingMetrics ? "Loading..." : totalPercent.toFixed(1)}% dari{" "}
-              {loadingMetrics ? "Loading..." : formatRupiah(targetTotal)}
+              {loadingMetrics ? <LoadingSpinner size={16} className="inline-flex" /> : totalPercent.toFixed(1)}% dari{" "}
+              {loadingMetrics ? <LoadingSpinner size={16} className="inline-flex" /> : formatRupiah(targetTotal)}
             </p>
           </div>
         </div>
@@ -334,7 +335,7 @@ export default function Dashboard() {
               </p>
               <h3 className="text-4xl xl:text-4xl font-black mt-3 text-yellow-400 drop-shadow-md truncate">
                 {loadingMetrics
-                  ? "Loading..."
+                  ? <LoadingSpinner size={24} className="inline-flex text-yellow-400" />
                   : formatRupiah(Math.max(sisaTarget, 0))}
               </h3>
             </div>
@@ -453,7 +454,7 @@ export default function Dashboard() {
                       colSpan="7"
                       className="p-8 text-center text-slate-500 text-lg font-bold"
                     >
-                      Memuat Data Kecamatan..
+                      <LoadingSpinner size={32} className="justify-center" text="Memuat data kecamatan..." />
                     </td>
                   </tr>
                 ) : (
