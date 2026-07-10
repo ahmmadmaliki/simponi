@@ -236,7 +236,7 @@ export default function Dashboard() {
                 Realisasi Opsen PKB
               </p>
               <h3 className="text-3xl xl:text-4xl font-black text-slate-800 mt-2 truncate">
-                {formatRupiah(realisasiPkb)}
+                {loadingMetrics ? "Loading..." : formatRupiah(realisasiPkb)}
               </h3>
             </div>
             <div className="bg-primary-100 p-4 rounded-full text-primary-600 shrink-0">
@@ -251,7 +251,8 @@ export default function Dashboard() {
               ></div>
             </div>
             <p className="mt-3 text-lg font-semibold text-slate-600">
-              Terpenuhi: {pkbPercent.toFixed(1)}% dari {formatRupiah(targetPkb)}
+              Terpenuhi: {loadingMetrics ? "Loading..." : pkbPercent.toFixed(1)}
+              % dari {loadingMetrics ? "Loading..." : formatRupiah(targetPkb)}
             </p>
           </div>
         </div>
@@ -266,7 +267,7 @@ export default function Dashboard() {
                 Realisasi Opsen BBNKB
               </p>
               <h3 className="text-3xl xl:text-4xl font-black text-slate-800 mt-2 truncate">
-                {formatRupiah(realisasiBbnkb)}
+                {loadingMetrics ? "Loading..." : formatRupiah(realisasiBbnkb)}
               </h3>
             </div>
             <div className="bg-green-100 p-4 rounded-full text-green-600 shrink-0">
@@ -281,8 +282,9 @@ export default function Dashboard() {
               ></div>
             </div>
             <p className="mt-3 text-lg font-semibold text-slate-600">
-              Terpenuhi: {bbnkbPercent.toFixed(1)}% dari{" "}
-              {formatRupiah(targetBbnkb)}
+              Terpenuhi:{" "}
+              {loadingMetrics ? "Loading..." : bbnkbPercent.toFixed(1)}% dari{" "}
+              {loadingMetrics ? "Loading..." : formatRupiah(targetBbnkb)}
             </p>
           </div>
         </div>
@@ -297,7 +299,9 @@ export default function Dashboard() {
                 Realisasi Total
               </p>
               <h3 className="text-3xl xl:text-4xl font-black text-slate-800 mt-2 truncate">
-                {formatRupiah(realisasiPkb + realisasiBbnkb)}
+                {loadingMetrics
+                  ? "Loading..."
+                  : formatRupiah(realisasiPkb + realisasiBbnkb)}
               </h3>
             </div>
             <div className="bg-orange-100 p-4 rounded-full text-orange-600 shrink-0">
@@ -312,8 +316,9 @@ export default function Dashboard() {
               ></div>
             </div>
             <p className="mt-3 text-lg font-semibold text-slate-600">
-              Terpenuhi: {totalPercent.toFixed(1)}% dari{" "}
-              {formatRupiah(targetTotal)}
+              Terpenuhi:{" "}
+              {loadingMetrics ? "Loading..." : totalPercent.toFixed(1)}% dari{" "}
+              {loadingMetrics ? "Loading..." : formatRupiah(targetTotal)}
             </p>
           </div>
         </div>
@@ -328,7 +333,9 @@ export default function Dashboard() {
                 Sisa Target Total
               </p>
               <h3 className="text-4xl xl:text-4xl font-black mt-3 text-yellow-400 drop-shadow-md truncate">
-                {formatRupiah(Math.max(sisaTarget, 0))}
+                {loadingMetrics
+                  ? "Loading..."
+                  : formatRupiah(Math.max(sisaTarget, 0))}
               </h3>
             </div>
             <div className="bg-primary-700/50 p-4 rounded-full text-yellow-400 shrink-0">

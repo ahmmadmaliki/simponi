@@ -256,10 +256,65 @@ const generateHybridQueries = (startDateStr, endDateStr) => {
   } else {
     queries.dailyChunks.push(...chunkDays(start, end));
   }
+  }
   return queries;
 };
 
+const fetchMetricsForDateRange = async (tglMulai, tglAkhir, kodeKota, token) => {
+  const hybridQueries = generateHybridQueries(tglMulai, tglAkhir);
+  let realisasiPkb = 0;
+  let realisasiBbnkb = 0;
+  const promises = [];
 
+  if (hybridQueries.months) {
+    promises.push(
+      axios
+        .get("https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total", {
+          params: { ...hybridQueries.months, kode_kota: kodeKota },
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((res) => {
+          const data = decodeBapendaResponse(res.data);
+          data.forEach((item) => {
+            realisasiPkb += Number(item.total_opsen_pkb_tgbayar) || 0;
+            realisasiBbnkb += Number(item.total_opsen_bbn_tgbayar) || 0;
+          });
+        })
+    );
+  }
+
+  for (const chunk of hybridQueries.dailyChunks) {
+    promises.push(
+      axios
+        .get("https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/pkb", {
+          params: { ...chunk, kode_kota: kodeKota },
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((res) => {
+          const data = decodeBapendaResponse(res.data);
+          data.forEach((item) => {
+            realisasiPkb += Number(item.opsen_pkb) || 0;
+          });
+        })
+    );
+    promises.push(
+      axios
+        .get("https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/bbn", {
+          params: { ...chunk, kode_kota: kodeKota },
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((res) => {
+          const data = decodeBapendaResponse(res.data);
+          data.forEach((item) => {
+            realisasiBbnkb += Number(item.opsen_bbn) || 0;
+          });
+        })
+    );
+  }
+
+  await Promise.all(promises);
+  return { realisasiPkb, realisasiBbnkb };
+};
 
 // Live Dashboard Metrics Proxy
 app.get("/api/dashboard/live-metrics", async (req, res) => {
@@ -286,16 +341,16 @@ app.get("/api/dashboard/live-metrics", async (req, res) => {
     const mmMulai = monthMap[bulanMulai] || "01";
     const mmAkhir = monthMap[bulanAkhir] || "12";
     const tglMulai = `${tahun}-${mmMulai}-01`;
-    
+
     const lastDayOfMonth = new Date(tahunNum, Number(mmAkhir), 0).getDate();
     let tglAkhirDate = new Date(tahunNum, Number(mmAkhir) - 1, lastDayOfMonth);
     const today = new Date();
     today.setHours(23, 59, 59, 999);
-    
+
     if (tglAkhirDate > today) {
       tglAkhirDate = new Date();
     }
-    
+
     const fmtDateStr = (d) => {
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -304,68 +359,7 @@ app.get("/api/dashboard/live-metrics", async (req, res) => {
     };
     const tglAkhir = fmtDateStr(tglAkhirDate);
 
-    const hybridQueries = generateHybridQueries(tglMulai, tglAkhir);
-
-    let realisasiPkb = 0;
-    let realisasiBbnkb = 0;
-
-    const promises = [];
-
-    // 1. Query Total Bulanan (jika ada bulan penuh)
-    if (hybridQueries.months) {
-      promises.push(
-        axios
-          .get(
-            "https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total",
-            {
-              params: { ...hybridQueries.months, kode_kota: kodeKota },
-              headers: { Authorization: `Bearer ${token}` },
-            },
-          )
-          .then((res) => {
-            const data = decodeBapendaResponse(res.data);
-            let totalPkb = 0;
-            data.forEach((item) => {
-              realisasiPkb += Number(item.total_opsen_pkb_tgbayar) || 0;
-              realisasiBbnkb += Number(item.total_opsen_bbn_tgbayar) || 0;
-              totalPkb += Number(item.total_opsen_pkb_tgbayar) || 0;
-            });
-            console.log("Total PKB from Bulanan:", totalPkb);
-          }),
-      );
-    }
-
-    // 2. Query Harian (PKB dan BBN secara terpisah) untuk hari sisa
-    for (const chunk of hybridQueries.dailyChunks) {
-      promises.push(
-        axios
-          .get("https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/pkb", {
-            params: { ...chunk, kode_kota: kodeKota },
-            headers: { Authorization: `Bearer ${token}` },
-          })
-          .then((res) => {
-            const data = decodeBapendaResponse(res.data);
-            data.forEach((item) => {
-              realisasiPkb += Number(item.opsen_pkb) || 0;
-            });
-          }),
-      );
-      promises.push(
-        axios
-          .get("https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/bbn", {
-            params: { ...chunk, kode_kota: kodeKota },
-            headers: { Authorization: `Bearer ${token}` },
-          })
-          .then((res) => {
-            const data = decodeBapendaResponse(res.data);
-            data.forEach((item) => {
-              realisasiBbnkb += Number(item.opsen_bbn) || 0;
-            });
-          }),
-      );
-    }
-
-    await Promise.all(promises);
+    const { realisasiPkb, realisasiBbnkb } = await fetchMetricsForDateRange(tglMulai, tglAkhir, kodeKota, token);
 
     res.json({
       targetPkb: targetPKB._sum.targetRupiah || 0,
@@ -447,21 +441,16 @@ app.get("/api/dashboard/kecamatan", async (req, res) => {
 app.get("/api/dashboard/trend", async (req, res) => {
   try {
     const { tahun, bulanMulai, bulanAkhir } = req.query;
-    let whereClause = {};
-    if (tahun) whereClause.tahun = Number(tahun);
+    if (!tahun) return res.status(400).json({ message: "tahun wajib diisi" });
+    const tahunNum = Number(tahun);
 
     const targetMonths =
       bulanMulai && bulanAkhir
         ? getMonthRange(bulanMulai, bulanAkhir)
         : Object.keys(monthMap);
 
-    whereClause.bulan = { in: targetMonths };
-
-    const rawData = await prisma.realisasiOpsen.groupBy({
-      by: ["bulan"],
-      _sum: { opsenPkb: true, opsenBbnkb: true },
-      where: whereClause,
-    });
+    const token = await getBapendaToken();
+    const kodeKota = process.env.BAPENDA_KODE_KOTA || "";
 
     const monthsMap = {
       Januari: "Jan",
@@ -478,21 +467,48 @@ app.get("/api/dashboard/trend", async (req, res) => {
       Desember: "Des",
     };
 
-    const formattedData = targetMonths.map((month) => {
-      const dataForMonth = rawData.find((d) => d.bulan === month);
+    const promises = targetMonths.map(async (month) => {
+      const mm = monthMap[month];
+      const tglMulai = `${tahunNum}-${mm}-01`;
+      
+      const lastDayOfMonth = new Date(tahunNum, Number(mm), 0).getDate();
+      let tglAkhirDate = new Date(tahunNum, Number(mm) - 1, lastDayOfMonth);
+      
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
+      
+      const firstDayOfMonth = new Date(tahunNum, Number(mm) - 1, 1);
+      if (firstDayOfMonth > today) {
+        return { name: monthsMap[month], pkb: 0, bbnkb: 0 };
+      }
+
+      if (tglAkhirDate > today) {
+        tglAkhirDate = new Date();
+      }
+      
+      const fmtDateStr = (d) => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const dt = String(d.getDate()).padStart(2, "0");
+        return `${y}-${m}-${dt}`;
+      };
+      const tglAkhir = fmtDateStr(tglAkhirDate);
+
+      const metrics = await fetchMetricsForDateRange(tglMulai, tglAkhir, kodeKota, token);
+      
       return {
-        name: monthsMap[month] || month.substring(0, 3),
-        pkb: dataForMonth ? Number(dataForMonth._sum.opsenPkb) / 1000000 : 0, // In millions for chart readability
-        bbnkb: dataForMonth
-          ? Number(dataForMonth._sum.opsenBbnkb) / 1000000
-          : 0,
+        name: monthsMap[month],
+        pkb: metrics.realisasiPkb / 1000000,
+        bbnkb: metrics.realisasiBbnkb / 1000000,
       };
     });
 
+    const formattedData = await Promise.all(promises);
+
     res.json(formattedData);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Terjadi kesalahan server" });
+    console.error("Error fetching live trend:", error.message);
+    res.status(500).json({ message: "Gagal menarik data trend" });
   }
 });
 
