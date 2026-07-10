@@ -183,7 +183,7 @@ export default function Dashboard() {
             <select
               value={filterTahun}
               onChange={(e) => setFilterTahun(e.target.value)}
-              className="w-full sm:w-auto pl-4 pr-10 py-3 md:py-4 rounded-xl border border-slate-300 text-base md:text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold"
+              className="w-full sm:w-auto pl-4 pr-10 py-2.5 md:py-3 rounded-xl border border-slate-300 text-sm md:text-base bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold"
             >
               <option value="2025">2025</option>
               <option value="2026">2026</option>
@@ -193,7 +193,7 @@ export default function Dashboard() {
               <select
                 value={filterBulanMulai}
                 onChange={(e) => setFilterBulanMulai(e.target.value)}
-                className="flex-1 pl-4 pr-8 py-3 md:py-4 rounded-xl border border-slate-300 text-base md:text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold sm:w-36 md:w-40"
+                className="flex-1 pl-4 pr-8 py-2.5 md:py-3 rounded-xl border border-slate-300 text-sm md:text-base bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold sm:w-36 md:w-40"
               >
                 {monthsList.map((m) => (
                   <option key={`start-${m}`} value={m}>
@@ -205,7 +205,7 @@ export default function Dashboard() {
               <select
                 value={filterBulanAkhir}
                 onChange={(e) => setFilterBulanAkhir(e.target.value)}
-                className="flex-1 pl-4 pr-8 py-3 md:py-4 rounded-xl border border-slate-300 text-base md:text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold sm:w-36 md:w-40"
+                className="flex-1 pl-4 pr-8 py-2.5 md:py-3 rounded-xl border border-slate-300 text-sm md:text-base bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold sm:w-36 md:w-40"
               >
                 {monthsList.map((m) => (
                   <option key={`end-${m}`} value={m}>
@@ -217,7 +217,7 @@ export default function Dashboard() {
           </div>
           <button
             onClick={handleDownloadExcel}
-            className="flex justify-center items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 md:py-4 px-4 md:px-6 rounded-xl shadow-md transition-all text-base md:text-lg w-full xl:w-auto h-fit"
+            className="flex justify-center items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-bold py-2.5 md:py-3 px-4 md:px-6 rounded-xl shadow-md transition-all text-sm md:text-base w-full xl:w-auto h-fit whitespace-nowrap"
           >
             <Download size={20} className="md:w-6 md:h-6" />
             Unduh Excel
