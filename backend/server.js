@@ -798,6 +798,15 @@ app.get("/api/template/realisasi", (req, res) =>
     "Total Realisasi Opsen",
   ]),
 );
+app.get("/api/template/kinerja", (req, res) =>
+  createTemplate(res, "Template_Kinerja_Kegiatan", [
+    "Jenis Kegiatan",
+    "Target Jumlah",
+    "Realisasi Jumlah",
+    "Bulan",
+    "Tahun",
+  ]),
+);
 
 // Manual Trigger for Notification Testing
 app.get("/api/test-notification", async (req, res) => {

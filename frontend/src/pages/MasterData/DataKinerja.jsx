@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../api/axios';
-import { Upload, FileSpreadsheet, Search } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Search } from 'lucide-react';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
 export default function DataKinerja() {
@@ -57,6 +57,10 @@ export default function DataKinerja() {
     }
   };
 
+  const handleDownloadTemplate = () => {
+    window.location.href = `${api.defaults.baseURL}/template/kinerja`;
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
@@ -70,6 +74,13 @@ export default function DataKinerja() {
           </div>
         </div>
         <div className="flex gap-3">
+          <button 
+            onClick={handleDownloadTemplate}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors"
+          >
+            <Download size={20} />
+            Unduh Template
+          </button>
           <input 
             type="file" 
             accept=".xlsx, .xls" 
