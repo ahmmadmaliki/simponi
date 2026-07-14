@@ -614,6 +614,49 @@ app.post("/api/upload/tunggakan", upload.single("file"), async (req, res) => {
   }
 });
 
+// --- DATA KINERJA KEGIATAN ---
+app.get("/api/master/kinerja", async (req, res) => {
+  const data = await prisma.kegiatan.findMany({
+    orderBy: [{ tahun: "desc" }, { bulan: "desc" }],
+  });
+  res.json(data);
+});
+app.post("/api/upload/kinerja", upload.single("file"), async (req, res) => {
+  try {
+    const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
+    const data = xlsx.utils.sheet_to_json(
+      workbook.Sheets[workbook.SheetNames[0]],
+    );
+    const mapped = data.map((row) => ({
+      jenisKegiatan: row["Jenis Kegiatan"]?.toString() || "",
+      targetJumlah: Number(row["Target Jumlah"]) || 0,
+      realisasiJumlah: Number(row["Realisasi Jumlah"]) || 0,
+      tahun: Number(row["Tahun"]) || new Date().getFullYear(),
+      bulan: row["Bulan"]?.toString() || "Januari",
+    }));
+    for (const row of mapped) {
+      const existing = await prisma.kegiatan.findFirst({
+        where: {
+          jenisKegiatan: row.jenisKegiatan,
+          tahun: row.tahun,
+          bulan: row.bulan,
+        },
+      });
+      if (existing) {
+        await prisma.kegiatan.update({
+          where: { id: existing.id },
+          data: row,
+        });
+      } else {
+        await prisma.kegiatan.create({ data: row });
+      }
+    }
+    res.json({ message: "Data Kinerja Kegiatan berhasil diunggah" });
+  } catch (error) {
+    res.status(500).json({ message: "Gagal upload Data Kinerja Kegiatan" });
+  }
+});
+
 // --- DATA TARGET ---
 app.get("/api/target", async (req, res) => {
   const data = await prisma.targetOpsen.findMany();

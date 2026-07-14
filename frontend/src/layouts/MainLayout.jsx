@@ -62,6 +62,11 @@ export default function MainLayout() {
             icon: <FileSpreadsheet size={20} />,
           },
           {
+            name: "Data Kinerja Kegiatan",
+            path: "/master/kinerja",
+            icon: <Activity size={20} />,
+          },
+          {
             name: "Data Panen",
             path: "/master/panen",
             icon: <Map size={20} />,
