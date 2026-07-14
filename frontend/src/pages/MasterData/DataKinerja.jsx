@@ -22,7 +22,6 @@ export default function DataKinerja() {
   
   const filteredData = kinerja?.filter(item => 
     item.jenisKegiatan?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    item.bulan?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.tahun?.toString().includes(searchTerm)
   ) || [];
 
@@ -45,7 +44,7 @@ export default function DataKinerja() {
       alert('Data Kinerja Kegiatan berhasil diunggah!');
     },
     onError: () => {
-      alert('Gagal mengunggah data. Pastikan format kolom: Jenis Kegiatan, Target Jumlah, Realisasi Jumlah, Tahun, Bulan.');
+      alert('Gagal mengunggah data. Pastikan format kolom: Jenis Kegiatan, Target Jumlah, Realisasi Jumlah, Tahun.');
     }
   });
 
@@ -119,7 +118,6 @@ export default function DataKinerja() {
             <thead>
               <tr className="bg-slate-100 text-slate-600 text-sm">
                 <th className="p-4 font-semibold border-b border-slate-200">Jenis Kegiatan</th>
-                <th className="p-4 font-semibold border-b border-slate-200">Bulan</th>
                 <th className="p-4 font-semibold border-b border-slate-200 text-center">Tahun</th>
                 <th className="p-4 font-semibold border-b border-slate-200 text-right">Target Jumlah</th>
                 <th className="p-4 font-semibold border-b border-slate-200 text-right">Realisasi Jumlah</th>
@@ -129,13 +127,13 @@ export default function DataKinerja() {
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan="6" className="p-8 text-center text-slate-500">
+                  <td colSpan="5" className="p-8 text-center text-slate-500">
                     <LoadingSpinner className="mx-auto w-8 h-8 text-primary-500" />
                   </td>
                 </tr>
               ) : currentItems.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="p-8 text-center text-slate-500">Belum ada data Kinerja Kegiatan yang diunggah.</td>
+                  <td colSpan="5" className="p-8 text-center text-slate-500">Belum ada data Kinerja Kegiatan yang diunggah.</td>
                 </tr>
               ) : (
                 currentItems.map((item, idx) => {
@@ -145,7 +143,6 @@ export default function DataKinerja() {
                   return (
                     <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                       <td className="p-4 text-slate-800 font-medium">{item.jenisKegiatan}</td>
-                      <td className="p-4 text-slate-600">{item.bulan}</td>
                       <td className="p-4 text-slate-600 text-center">{item.tahun}</td>
                       <td className="p-4 text-slate-800 text-right font-semibold">{item.targetJumlah}</td>
                       <td className="p-4 text-slate-800 text-right font-semibold">{item.realisasiJumlah}</td>

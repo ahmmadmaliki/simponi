@@ -622,7 +622,7 @@ app.post("/api/upload/tunggakan", upload.single("file"), async (req, res) => {
 // --- DATA KINERJA KEGIATAN ---
 app.get("/api/master/kinerja", async (req, res) => {
   const data = await prisma.kegiatan.findMany({
-    orderBy: [{ tahun: "desc" }, { bulan: "desc" }],
+    orderBy: [{ tahun: "desc" }],
   });
   res.json(data);
 });
@@ -637,14 +637,12 @@ app.post("/api/upload/kinerja", upload.single("file"), async (req, res) => {
       targetJumlah: Number(row["Target Jumlah"]) || 0,
       realisasiJumlah: Number(row["Realisasi Jumlah"]) || 0,
       tahun: Number(row["Tahun"]) || new Date().getFullYear(),
-      bulan: row["Bulan"]?.toString() || "Januari",
     }));
     for (const row of mapped) {
       const existing = await prisma.kegiatan.findFirst({
         where: {
           jenisKegiatan: row.jenisKegiatan,
           tahun: row.tahun,
-          bulan: row.bulan,
         },
       });
       if (existing) {
@@ -803,7 +801,6 @@ app.get("/api/template/kinerja", (req, res) =>
     "Jenis Kegiatan",
     "Target Jumlah",
     "Realisasi Jumlah",
-    "Bulan",
     "Tahun",
   ]),
 );

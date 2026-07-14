@@ -47,7 +47,6 @@ model Kegiatan {
   targetJumlah     Int
   realisasiJumlah  Int
   tahun            Int
-  bulan            String
   createdAt        DateTime @default(now())
 }
 
