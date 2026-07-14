@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import cron from "node-cron";
 import { sendEmailAlert, sendWhatsAppAlert } from "./notificationService.js";
+import { getBapendaToken, fetchMetricsForDateRange } from "./bapendaService.js";
 
 const prisma = new PrismaClient();
 
@@ -16,13 +17,24 @@ const evaluateTargets = async () => {
     // Asumsi linear growth
     const expectedRatio = dayOfYear / 365;
 
-    // Hitung total realisasi PKB & BBNKB tahun berjalan
-    const aggregateRealisasi = await prisma.realisasiOpsen.aggregate({
-      _sum: { opsenPkb: true, opsenBbnkb: true },
-      where: { tahun: currentYear }
-    });
-    const realisasiPKB = Number(aggregateRealisasi._sum.opsenPkb || 0);
-    const realisasiBBNKB = Number(aggregateRealisasi._sum.opsenBbnkb || 0);
+    // Hitung total realisasi PKB & BBNKB tahun berjalan secara Live
+    const tglMulai = `${currentYear}-01-01`;
+    const fmtDate = (d) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const dt = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${dt}`;
+    };
+    const tglAkhir = fmtDate(today);
+
+    const token = await getBapendaToken();
+    const kodeKota = process.env.BAPENDA_KODE_KOTA || "";
+    
+    console.log(`[CRON] Menarik data live Bapenda dari ${tglMulai} s/d ${tglAkhir}...`);
+    const metrics = await fetchMetricsForDateRange(tglMulai, tglAkhir, kodeKota, token);
+
+    const realisasiPKB = metrics.realisasiPkb;
+    const realisasiBBNKB = metrics.realisasiBbnkb;
     const realisasiTotal = realisasiPKB + realisasiBBNKB;
 
     // Ambil Target dari DB
