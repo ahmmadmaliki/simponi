@@ -39,8 +39,9 @@ function App() {
           <Route path="evaluasi" element={<Evaluasi />} />
           <Route path="rekomendasi" element={<RekomendasiTindakan />} />
 
+          <Route path="users" element={<AdminRoute><UserManagement /></AdminRoute>} />
+
           {/* Master Data Routes (Admin Only) */}
-          <Route path="master/users" element={<AdminRoute><UserManagement /></AdminRoute>} />
           <Route path="master/panen" element={<AdminRoute><DataPanen /></AdminRoute>} />
           <Route path="master/tunggakan" element={<AdminRoute><DataTunggakan /></AdminRoute>} />
           <Route path="master/target" element={<AdminRoute><DataTarget /></AdminRoute>} />

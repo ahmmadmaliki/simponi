@@ -43,14 +43,17 @@ export default function MainLayout() {
     },
   ];
 
+  if (userRole === "admin") {
+    navItems.push({
+      name: "Manajemen User",
+      path: "/users",
+      icon: <Users size={24} />,
+    });
+  }
+
   const masterDataItems =
     userRole === "admin"
       ? [
-          {
-            name: "Manajemen User",
-            path: "/master/users",
-            icon: <Users size={20} />,
-          },
           {
             name: "Data Target Opsen",
             path: "/master/target",
