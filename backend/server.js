@@ -418,13 +418,10 @@ app.get("/api/evaluasi/komparasi", async (req, res) => {
 // Kinerja Kegiatan Route
 app.get("/api/kinerja", async (req, res) => {
   try {
-    const { tahun, bulanMulai, bulanAkhir } = req.query;
+    const { tahun } = req.query;
     
     let whereClause = {};
     if (tahun) whereClause.tahun = Number(tahun);
-    if (bulanMulai && bulanAkhir) {
-      whereClause.bulan = { in: getMonthRange(bulanMulai, bulanAkhir) };
-    }
 
     const rawData = await prisma.kegiatan.groupBy({
       by: ["jenisKegiatan"],

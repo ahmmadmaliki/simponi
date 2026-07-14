@@ -5,22 +5,13 @@ import { useState } from 'react';
 
 export default function KinerjaKegiatan() {
   const [filterTahun, setFilterTahun] = useState(new Date().getFullYear().toString());
-  const [filterBulanMulai, setFilterBulanMulai] = useState("Januari");
-  const [filterBulanAkhir, setFilterBulanAkhir] = useState("Desember");
-
-  const monthsList = [
-    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-    "Juli", "Agustus", "September", "Oktober", "November", "Desember",
-  ];
 
   const { data: kegiatanList, isLoading } = useQuery({
-    queryKey: ['kinerjaData', filterTahun, filterBulanMulai, filterBulanAkhir],
+    queryKey: ['kinerjaData', filterTahun],
     queryFn: async () => {
       const res = await api.get('/kinerja', {
         params: {
           tahun: filterTahun,
-          bulanMulai: filterBulanMulai,
-          bulanAkhir: filterBulanAkhir,
         }
       });
       return res.data;
@@ -38,7 +29,7 @@ export default function KinerjaKegiatan() {
         <div>
           <h2 className="text-3xl font-extrabold text-slate-800">Kinerja Kegiatan Operasional</h2>
           <p className="text-slate-500 mt-1 text-xl">
-            Periode Berjalan: {filterBulanMulai} - {filterBulanAkhir} ({filterTahun})
+            Periode Berjalan: Tahunan ({filterTahun})
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto mt-4 md:mt-0">
@@ -51,31 +42,6 @@ export default function KinerjaKegiatan() {
             <option value="2026">2026</option>
             <option value="2027">2027</option>
           </select>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <select
-              value={filterBulanMulai}
-              onChange={(e) => setFilterBulanMulai(e.target.value)}
-              className="flex-1 pl-4 pr-8 py-2.5 md:py-3 rounded-xl border border-slate-300 text-sm md:text-base bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold sm:w-36 md:w-40"
-            >
-              {monthsList.map((m) => (
-                <option key={`start-${m}`} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
-            <span className="text-slate-500 font-bold">-</span>
-            <select
-              value={filterBulanAkhir}
-              onChange={(e) => setFilterBulanAkhir(e.target.value)}
-              className="flex-1 pl-4 pr-8 py-2.5 md:py-3 rounded-xl border border-slate-300 text-sm md:text-base bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-semibold sm:w-36 md:w-40"
-            >
-              {monthsList.map((m) => (
-                <option key={`end-${m}`} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
       </div>
 
