@@ -119,7 +119,12 @@ export const generateHybridQueries = (startDateStr, endDateStr) => {
   return queries;
 };
 
-export const fetchMetricsForDateRange = async (tglMulai, tglAkhir, kodeKota, token) => {
+export const fetchMetricsForDateRange = async (
+  tglMulai,
+  tglAkhir,
+  kodeKota,
+  token,
+) => {
   const hybridQueries = generateHybridQueries(tglMulai, tglAkhir);
   let realisasiPkb = 0;
   let realisasiBbnkb = 0;
@@ -139,6 +144,13 @@ export const fetchMetricsForDateRange = async (tglMulai, tglAkhir, kodeKota, tok
             realisasiBbnkb += Number(item.total_opsen_bbn_tgbayar) || 0;
           });
         })
+        .catch((err) => {
+          if (err.response && err.response.status === 404) {
+            console.log(`[Bapenda] Data tidak ditemukan (404) untuk bulan:`, hybridQueries.months);
+          } else {
+            throw err;
+          }
+        }),
     );
   }
 
@@ -155,6 +167,13 @@ export const fetchMetricsForDateRange = async (tglMulai, tglAkhir, kodeKota, tok
             realisasiPkb += Number(item.opsen_pkb) || 0;
           });
         })
+        .catch((err) => {
+          if (err.response && err.response.status === 404) {
+            console.log(`[Bapenda] Data PKB tidak ditemukan (404) untuk tanggal:`, chunk);
+          } else {
+            throw err;
+          }
+        }),
     );
     promises.push(
       axios
@@ -168,6 +187,13 @@ export const fetchMetricsForDateRange = async (tglMulai, tglAkhir, kodeKota, tok
             realisasiBbnkb += Number(item.opsen_bbn) || 0;
           });
         })
+        .catch((err) => {
+          if (err.response && err.response.status === 404) {
+            console.log(`[Bapenda] Data BBNKB tidak ditemukan (404) untuk tanggal:`, chunk);
+          } else {
+            throw err;
+          }
+        }),
     );
   }
 

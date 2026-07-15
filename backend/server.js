@@ -10,14 +10,13 @@ import { fileURLToPath } from "url";
 import xlsx from "xlsx";
 
 import axios from "axios";
+import {
+  decodeBapendaResponse,
+  fetchMetricsForDateRange,
+  getBapendaToken,
+} from "./services/bapendaService.js";
 import { evaluateTargets, startCronJobs } from "./services/cronScheduler.js";
 import { waClient } from "./services/notificationService.js";
-import {
-  getBapendaToken,
-  fetchMetricsForDateRange,
-  decodeBapendaResponse
-} from "./services/bapendaService.js";
-
 
 dotenv.config();
 
@@ -149,7 +148,6 @@ const monthMap = {
   Desember: "12",
 };
 
-
 // Live Dashboard Metrics Proxy
 app.get("/api/dashboard/live-metrics", async (req, res) => {
   try {
@@ -193,7 +191,12 @@ app.get("/api/dashboard/live-metrics", async (req, res) => {
     };
     const tglAkhir = fmtDateStr(tglAkhirDate);
 
-    const { realisasiPkb, realisasiBbnkb } = await fetchMetricsForDateRange(tglMulai, tglAkhir, kodeKota, token);
+    const { realisasiPkb, realisasiBbnkb } = await fetchMetricsForDateRange(
+      tglMulai,
+      tglAkhir,
+      kodeKota,
+      token,
+    );
 
     res.json({
       targetPkb: targetPKB._sum.targetRupiah || 0,
@@ -304,13 +307,13 @@ app.get("/api/dashboard/trend", async (req, res) => {
     const promises = targetMonths.map(async (month) => {
       const mm = monthMap[month];
       const tglMulai = `${tahunNum}-${mm}-01`;
-      
+
       const lastDayOfMonth = new Date(tahunNum, Number(mm), 0).getDate();
       let tglAkhirDate = new Date(tahunNum, Number(mm) - 1, lastDayOfMonth);
-      
+
       const today = new Date();
       today.setHours(23, 59, 59, 999);
-      
+
       const firstDayOfMonth = new Date(tahunNum, Number(mm) - 1, 1);
       if (firstDayOfMonth > today) {
         return { name: monthsMap[month], pkb: 0, bbnkb: 0 };
@@ -319,7 +322,7 @@ app.get("/api/dashboard/trend", async (req, res) => {
       if (tglAkhirDate > today) {
         tglAkhirDate = new Date();
       }
-      
+
       const fmtDateStr = (d) => {
         const y = d.getFullYear();
         const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -328,8 +331,14 @@ app.get("/api/dashboard/trend", async (req, res) => {
       };
       const tglAkhir = fmtDateStr(tglAkhirDate);
 
-      const metrics = await fetchMetricsForDateRange(tglMulai, tglAkhir, kodeKota, token);
-      
+      const metrics = await fetchMetricsForDateRange(
+        tglMulai,
+        tglAkhir,
+        kodeKota,
+        token,
+      );
+      console.log(`Metrics for ${month}:`, metrics);
+
       return {
         name: monthsMap[month],
         pkb: metrics.realisasiPkb / 1000000,
@@ -419,7 +428,7 @@ app.get("/api/evaluasi/komparasi", async (req, res) => {
 app.get("/api/kinerja", async (req, res) => {
   try {
     const { tahun } = req.query;
-    
+
     let whereClause = {};
     if (tahun) whereClause.tahun = Number(tahun);
 
