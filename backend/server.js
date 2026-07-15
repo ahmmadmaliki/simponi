@@ -337,7 +337,6 @@ app.get("/api/dashboard/trend", async (req, res) => {
         kodeKota,
         token,
       );
-      console.log(`Metrics for ${month}:`, metrics);
 
       return {
         name: monthsMap[month],

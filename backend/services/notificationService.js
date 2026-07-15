@@ -34,9 +34,38 @@ const sendWhatsAppAlert = async (phoneNumber, message) => {
     return;
   }
   try {
-    const formattedNumber = phoneNumber.replace(/^[0|+]/, '62') + '@c.us';
+    let cleanNumber = phoneNumber.replace(/\D/g, '');
+    if (cleanNumber.startsWith('0')) {
+      cleanNumber = '62' + cleanNumber.substring(1);
+    } else if (!cleanNumber.startsWith('62')) {
+      cleanNumber = '62' + cleanNumber;
+    }
+    const formattedNumber = cleanNumber + '@c.us';
+
+    const isRegistered = await waClient.isRegisteredUser(formattedNumber);
+    if (!isRegistered) {
+      console.log(`[WhatsApp] Peringatan: Nomor ${phoneNumber} TIDAK TERDAFTAR di WhatsApp!`);
+      return;
+    }
+
+    // Trik "Simulasi Mengetik" untuk mengelabui Anti-Spam Meta
+    try {
+      const chat = await waClient.getChatById(formattedNumber);
+      await chat.sendStateTyping(); // Munculkan status "Sedang mengetik..."
+      
+      // Jeda waktu acak antara 3 hingga 6 detik agar persis seperti manusia mengetik lambat
+      const randomDelay = Math.floor(Math.random() * (6000 - 3000 + 1)) + 3000;
+      await new Promise(resolve => setTimeout(resolve, randomDelay));
+      
+      await chat.clearState(); // Bersihkan status mengetik
+    } catch (chatError) {
+      // Jika chat belum pernah ada sama sekali dan gagal mendapatkan objek chat,
+      // kita gunakan jeda standar saja
+      await new Promise(resolve => setTimeout(resolve, 3000));
+    }
+
     await waClient.sendMessage(formattedNumber, message);
-    console.log(`[WhatsApp] Pesan berhasil dikirim ke ${phoneNumber}`);
+    console.log(`[WhatsApp] Pesan berhasil dikirim ke ${phoneNumber} (dengan Simulasi Natural)`);
   } catch (error) {
     console.error('[WhatsApp] Gagal mengirim pesan:', error);
   }
