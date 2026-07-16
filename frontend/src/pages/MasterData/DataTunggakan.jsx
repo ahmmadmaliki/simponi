@@ -11,7 +11,7 @@ export default function DataTunggakan() {
     queryKey: ['dataTunggakan'],
     queryFn: async () => {
       const res = await api.get('/tunggakan');
-      return res.data;
+      return res.data?.data || res.data; // Fallback in case backend still returns object
     }
   });
 
@@ -20,8 +20,7 @@ export default function DataTunggakan() {
   const itemsPerPage = 10;
   
   const filteredData = tunggakan?.filter(item => 
-    item.kecamatan?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    item.desa?.toLowerCase().includes(searchTerm.toLowerCase())
+    item.kecamatan?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -47,6 +46,8 @@ export default function DataTunggakan() {
     }
   });
 
+
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -68,7 +69,7 @@ export default function DataTunggakan() {
           </div>
           <div>
             <h2 className="text-2xl font-extrabold text-slate-800">Data Tunggakan</h2>
-            <p className="text-slate-500 mt-1">Kelola data rasio tunggakan pajak kendaraan bermotor</p>
+            <p className="text-slate-500 mt-1">Kelola data jumlah obyek dan potensi tunggakan pajak kendaraan bermotor</p>
           </div>
         </div>
         <div className="flex gap-3">
@@ -104,7 +105,7 @@ export default function DataTunggakan() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input 
               type="text"
-              placeholder="Cari kecamatan atau desa..."
+              placeholder="Cari kecamatan..."
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
@@ -124,27 +125,27 @@ export default function DataTunggakan() {
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
                 <th className="p-4">No</th>
                 <th className="p-4">Kecamatan</th>
-                <th className="p-4">Desa</th>
-                <th className="p-4">Bulan</th>
-                <th className="p-4">Tahun</th>
-                <th className="p-4">Rasio Tunggakan</th>
+                <th className="p-4 text-right">Jumlah Obyek</th>
+                <th className="p-4 text-right">Potensi Tunggakan</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
-                <tr><td colSpan="6" className="p-8 text-center text-slate-500">Memuat data...</td></tr>
+                <tr><td colSpan="4" className="p-8 text-center text-slate-500">Memuat data...</td></tr>
               ) : filteredData.length === 0 ? (
-                <tr><td colSpan="6" className="p-8 text-center text-slate-500">Data tidak ditemukan.</td></tr>
+                <tr><td colSpan="4" className="p-8 text-center text-slate-500">Data tidak ditemukan.</td></tr>
               ) : (
                 currentItems.map((item, index) => (
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                     <td className="p-4 text-slate-500">{indexOfFirstItem + index + 1}</td>
-                    <td className="p-4 font-medium text-slate-800">{item.kecamatan}</td>
-                    <td className="p-4 text-slate-600">{item.desa || '-'}</td>
-                    <td className="p-4 text-slate-600">{item.bulan}</td>
-                    <td className="p-4 text-slate-600">{item.tahun}</td>
-                    <td className="p-4">
-                      <span className="font-bold text-slate-700">{item.rasioTunggakan}%</span>
+                    <td className="p-4 font-bold text-slate-800">{item.kecamatan}</td>
+                    <td className="p-4 text-slate-600 font-medium text-right">
+                      {Number(item.obyek).toLocaleString('id-ID')}
+                    </td>
+                    <td className="p-4 text-right">
+                      <span className="font-bold text-red-600">
+                        Rp {Number(item.potensi).toLocaleString('id-ID')}
+                      </span>
                     </td>
                   </tr>
                 ))

@@ -41,28 +41,47 @@ export default function RekomendasiTindakan() {
       {/* Cards Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {rekomendasi?.map((item) => {
-          const isOperasi = item.tipe === 'Operasi Gabungan';
+          const isUtama = item.priorityLevel === 1;
+          const isMenengah = item.priorityLevel === 2;
           
+          let borderColor = 'border-l-blue-500';
+          let iconBg = 'bg-blue-100 text-blue-600';
+          let badgeBg = 'bg-blue-100 text-blue-800';
+          let prioritasBadgeBg = 'bg-slate-100 text-slate-700';
+
+          if (isUtama) {
+            borderColor = 'border-l-red-500';
+            iconBg = 'bg-red-100 text-red-600';
+            badgeBg = 'bg-red-100 text-red-800';
+            prioritasBadgeBg = 'bg-red-600 text-white shadow-sm';
+          } else if (isMenengah) {
+            borderColor = 'border-l-amber-500';
+            iconBg = 'bg-amber-100 text-amber-600';
+            badgeBg = 'bg-amber-100 text-amber-800';
+            prioritasBadgeBg = 'bg-amber-500 text-white shadow-sm';
+          }
+
           return (
             <div 
               key={item.id} 
-              className={`bg-white rounded-2xl shadow-sm border p-6 transition-all duration-300 hover:shadow-md ${
-                isOperasi ? 'border-l-4 border-l-orange-500' : 'border-l-4 border-l-primary-500'
-              }`}
+              className={`bg-white rounded-2xl shadow-sm border p-6 transition-all duration-300 hover:shadow-md border-l-4 ${borderColor}`}
             >
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
-                  <div className={`p-3 rounded-xl ${isOperasi ? 'bg-orange-100 text-orange-600' : 'bg-primary-100 text-primary-600'}`}>
-                    {isOperasi ? <ShieldAlert size={24} /> : <Lightbulb size={24} />}
+                  <div className={`p-3 rounded-xl ${iconBg}`}>
+                    {isUtama ? <ShieldAlert size={24} /> : <Lightbulb size={24} />}
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-slate-800">{item.kecamatan}</h3>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1 ${
-                      isOperasi ? 'bg-orange-100 text-orange-800' : 'bg-primary-100 text-primary-800'
-                    }`}>
-                      {item.tipe}
-                    </span>
+                    <div className="flex gap-2 mt-1">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeBg}`}>
+                        {item.tipe}
+                      </span>
+                    </div>
                   </div>
+                </div>
+                <div className={`px-3 py-1 rounded-full text-xs font-bold ${prioritasBadgeBg}`}>
+                  {isUtama ? '🔥 ' : ''}{item.priorityText}
                 </div>
               </div>
 
@@ -85,7 +104,7 @@ export default function RekomendasiTindakan() {
                     <AlertTriangle className="text-amber-500" size={18} />
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500 font-medium">Rasio Tunggakan</p>
+                    <p className="text-xs text-slate-500 font-medium">Potensi Tunggakan</p>
                     <p className="text-sm font-bold text-slate-800">{item.dataTunggakan}</p>
                   </div>
                 </div>

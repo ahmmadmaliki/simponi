@@ -20,8 +20,7 @@ export default function DataPanen() {
   const itemsPerPage = 10;
   
   const filteredData = panen?.filter(item => 
-    item.kecamatan?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    item.desa?.toLowerCase().includes(searchTerm.toLowerCase())
+    item.kecamatan?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -68,7 +67,7 @@ export default function DataPanen() {
           </div>
           <div>
             <h2 className="text-2xl font-extrabold text-slate-800">Data Panen Daerah</h2>
-            <p className="text-slate-500 mt-1">Kelola data status panen raya per kecamatan</p>
+            <p className="text-slate-500 mt-1">Kelola data jadwal panen raya per komoditas dan kecamatan</p>
           </div>
         </div>
         <div className="flex gap-3">
@@ -104,7 +103,7 @@ export default function DataPanen() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input 
               type="text"
-              placeholder="Cari kecamatan atau desa..."
+              placeholder="Cari kecamatan..."
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
@@ -124,36 +123,36 @@ export default function DataPanen() {
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
                 <th className="p-4">No</th>
                 <th className="p-4">Kecamatan</th>
-                <th className="p-4">Desa</th>
-                <th className="p-4">Bulan</th>
-                <th className="p-4">Tahun</th>
-                <th className="p-4">Status Panen</th>
+                <th className="p-4">Tan. Padi</th>
+                <th className="p-4">Tan. Palawija</th>
+                <th className="p-4">Hortikultura</th>
+                <th className="p-4">Tebu</th>
+                <th className="p-4">Keterangan</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
-                <tr><td colSpan="6" className="p-8 text-center text-slate-500">Memuat data...</td></tr>
+                <tr><td colSpan="7" className="p-8 text-center text-slate-500">Memuat data...</td></tr>
               ) : filteredData.length === 0 ? (
-                <tr><td colSpan="6" className="p-8 text-center text-slate-500">Data tidak ditemukan.</td></tr>
+                <tr><td colSpan="7" className="p-8 text-center text-slate-500">Data tidak ditemukan.</td></tr>
               ) : (
                 currentItems.map((item, index) => (
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                     <td className="p-4 text-slate-500">{indexOfFirstItem + index + 1}</td>
-                    <td className="p-4 font-medium text-slate-800">{item.kecamatan}</td>
-                    <td className="p-4 text-slate-600">{item.desa || '-'}</td>
-                    <td className="p-4 text-slate-600">{item.bulan}</td>
-                    <td className="p-4 text-slate-600">{item.tahun}</td>
-                    <td className="p-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        item.statusPanen?.toLowerCase().includes('tinggi') || item.statusPanen?.toLowerCase().includes('raya')
-                          ? 'bg-green-100 text-green-700' 
-                          : item.statusPanen?.toLowerCase().includes('sedang')
-                          ? 'bg-yellow-100 text-yellow-700'
-                          : 'bg-red-100 text-red-700'
-                      }`}>
-                        {item.statusPanen}
-                      </span>
+                    <td className="p-4 font-bold text-slate-800">{item.kecamatan}</td>
+                    <td className="p-4 text-slate-600">
+                      <span className={item.padi !== '0' ? 'font-medium text-emerald-600' : 'text-slate-400'}>{item.padi !== '0' ? item.padi : '-'}</span>
                     </td>
+                    <td className="p-4 text-slate-600">
+                      <span className={item.palawija !== '0' ? 'font-medium text-amber-600' : 'text-slate-400'}>{item.palawija !== '0' ? item.palawija : '-'}</span>
+                    </td>
+                    <td className="p-4 text-slate-600">
+                      <span className={item.hortikultura !== '0' ? 'font-medium text-green-600' : 'text-slate-400'}>{item.hortikultura !== '0' ? item.hortikultura : '-'}</span>
+                    </td>
+                    <td className="p-4 text-slate-600">
+                      <span className={item.tebu !== '0' ? 'font-medium text-purple-600' : 'text-slate-400'}>{item.tebu !== '0' ? item.tebu : '-'}</span>
+                    </td>
+                    <td className="p-4 text-slate-500 italic text-sm">{item.keterangan || '-'}</td>
                   </tr>
                 ))
               )}

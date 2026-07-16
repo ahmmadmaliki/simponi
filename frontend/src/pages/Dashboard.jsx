@@ -70,7 +70,7 @@ export default function Dashboard() {
     },
   });
 
-  const { data: kecamatanData, isLoading: loadingKec } = useQuery({
+  const { data: kecamatanResponse, isLoading: loadingKec } = useQuery({
     queryKey: [
       "dashboardKecamatan",
       filterTahun,
@@ -87,6 +87,9 @@ export default function Dashboard() {
       return res.data;
     },
   });
+
+  const kecamatanData = kecamatanResponse?.data || [];
+  const lastSyncDate = kecamatanResponse?.lastSync || null;
 
   const { data: trendData, isLoading: loadingTrend } = useQuery({
     queryKey: [
@@ -175,7 +178,7 @@ export default function Dashboard() {
             Dashboard Evaluasi Target Opsen
           </h2>
           <p className="text-slate-500 mt-1 text-lg md:text-xl">
-            Tahun Anggaran 2026
+            Tahun Anggaran {filterTahun}
           </p>
         </div>
         <div className="flex flex-col xl:flex-row items-start xl:items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
@@ -415,10 +418,17 @@ export default function Dashboard() {
         </div>
 
         <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <h3 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-3">
-            <Building2 className="text-primary-600" size={28} />
-            Realisasi per Kecamatan
-          </h3>
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+            <h3 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
+              <Building2 className="text-primary-600" size={28} />
+              Realisasi per Kecamatan
+            </h3>
+            {lastSyncDate && (
+              <div className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm font-bold border border-blue-100 whitespace-nowrap">
+                Data s.d. {new Date(lastSyncDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
+              </div>
+            )}
+          </div>
 
           <div className="overflow-x-auto max-h-[400px] overflow-y-auto border border-slate-100 rounded-xl relative shadow-inner">
             <table className="w-full text-left">

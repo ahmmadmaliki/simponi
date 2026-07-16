@@ -10,8 +10,8 @@ export default function Login() {
   const location = useLocation();
   const from = location.state?.from?.pathname || "/dashboard";
 
-  const [username, setUsername] = useState("demo");
-  const [password, setPassword] = useState("demo");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
   const loginMutation = useMutation({
     mutationFn: async (credentials) => {
@@ -69,6 +69,7 @@ export default function Login() {
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                placeholder="Masukkan username Anda"
                 className="appearance-none block w-full px-5 py-4 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 text-lg sm:text-lg"
               />
             </div>
@@ -87,13 +88,13 @@ export default function Login() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
                 className="appearance-none block w-full px-5 py-4 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 text-lg sm:text-lg"
               />
             </div>
 
             <div className="bg-primary-50 border border-primary-200 p-4 rounded-xl text-primary-800 text-[15px]">
-              <strong>Demo Hint:</strong> Gunakan username <code>admin</code>{" "}
-              atau <code>kadin</code> untuk melihat beranda.
+              <strong>Perhatian:</strong> Silakan masuk menggunakan kredensial akun yang telah diberikan oleh Administrator sistem.
             </div>
 
             <div>

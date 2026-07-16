@@ -213,64 +213,119 @@ app.get("/api/dashboard/live-metrics", async (req, res) => {
   }
 });
 
-// Kecamatan Data Route
+// Helper for date formatting
+function getLastDayOfMonth(year, month) {
+  return new Date(year, month, 0).getDate();
+}
+
+function getMonthIndex(monthStr) {
+  const m = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+  return m.indexOf(monthStr) + 1;
+}
+
+// Kecamatan Data Route (LIVE BAPENDA API WITH FALLBACK)
 app.get("/api/dashboard/kecamatan", async (req, res) => {
   try {
     const { tahun, bulanMulai, bulanAkhir } = req.query;
-    let whereClause = {};
-    if (tahun) whereClause.tahun = Number(tahun);
-    if (bulanMulai && bulanAkhir) {
-      whereClause.bulan = { in: getMonthRange(bulanMulai, bulanAkhir) };
+    
+    if (!tahun || !bulanMulai || !bulanAkhir) {
+      return res.status(400).json({ message: "Parameter tahun, bulanMulai, bulanAkhir diperlukan." });
     }
 
-    const rawData = await prisma.realisasiOpsen.groupBy({
-      by: ["kecamatan"],
-      _sum: {
-        pkbPokok: true,
-        opsenPkb: true,
-        bbnkbPokok: true,
-        opsenBbnkb: true,
-        totalOpsen: true,
-      },
-      where: whereClause,
+    const token = await getBapendaToken();
+    const kodeKota = process.env.BAPENDA_KODE_KOTA || '3514';
+    
+    const startMonth = getMonthIndex(bulanMulai);
+    const endMonthRequested = getMonthIndex(bulanAkhir);
+    
+    // STEP 1: Find the Last Available Month by checking when total stops changing
+    let lastAvailableMonth = startMonth;
+    let currentCheckMonth = endMonthRequested;
+    let prevTotal = -1;
+    let maxRetries = 12;
+    let latestValidData = null;
+
+    // We step backwards from endMonthRequested
+    while (currentCheckMonth >= startMonth && maxRetries > 0) {
+      const checkStartStr = `${tahun}-01-01`; // Always cumulative to compare totals
+      const checkEndDay = getLastDayOfMonth(Number(tahun), currentCheckMonth);
+      const checkEndStr = `${tahun}-${String(currentCheckMonth).padStart(2, '0')}-${checkEndDay}`;
+
+      try {
+        const response = await axios.get("https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/summary-kecamatan", {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { 
+            tgbayar_awal: checkStartStr,
+            tgbayar_akhir: checkEndStr,
+            kode_kota: kodeKota 
+          }
+        });
+        
+        const decoded = decodeBapendaResponse(response.data);
+        if (decoded && decoded.data && decoded.data.length > 0) {
+          const currentTotal = decoded.summary?.total || 0;
+          
+          if (prevTotal === -1) {
+             // First check (e.g. Dec)
+             prevTotal = currentTotal;
+             latestValidData = decoded;
+             lastAvailableMonth = currentCheckMonth;
+          } else if (currentTotal < prevTotal) {
+             // We found a drop! This means the month AFTER this one was the first month of the plateau
+             // Which means `currentCheckMonth + 1` is the true last available month!
+             lastAvailableMonth = currentCheckMonth + 1;
+             break;
+          } else {
+             // Still on the plateau
+             lastAvailableMonth = currentCheckMonth;
+          }
+        } else {
+           // No data at all for this month (e.g. earlier than January)
+           break;
+        }
+      } catch (err) {
+        // Error
+      }
+
+      currentCheckMonth--;
+      maxRetries--;
+    }
+
+    if (!latestValidData) {
+      return res.json({ data: [], lastSync: null });
+    }
+
+    // Now that we found the plateau start (lastAvailableMonth), the latestValidData we kept 
+    // actually has the exact same data as the plateau start! We don't need another fetch.
+    const finalEndDay = getLastDayOfMonth(Number(tahun), lastAvailableMonth);
+    const finalSyncStr = `${tahun}-${String(lastAvailableMonth).padStart(2, '0')}-${finalEndDay}`;
+
+    // Format data to match what the frontend expects
+    const formattedData = latestValidData.data.map(item => {
+      const opsenPkb = Number(item.opsen_pkb) || 0;
+      const opsenBbnkb = Number(item.opsen_bbn) || 0;
+      
+      const pkbPokok = opsenPkb / 0.66;
+      const bbnkbPokok = opsenBbnkb / 0.66;
+      
+      return {
+        id: Number(item.kode_camat),
+        name: item.nama_kecamatan,
+        target: 5000000000, 
+        pkbPokok: pkbPokok,
+        opsenPkb: opsenPkb,
+        bbnkbPokok: bbnkbPokok,
+        opsenBbnkb: opsenBbnkb
+      };
     });
 
-    if (rawData.length === 0) {
-      return res.json([
-        {
-          id: 1,
-          name: "Magetan",
-          target: 5000000000,
-          pkbPokok: 1500000000,
-          opsenPkb: 990000000,
-          bbnkbPokok: 1200000000,
-          opsenBbnkb: 792000000,
-        },
-        {
-          id: 2,
-          name: "Maospati",
-          target: 3500000000,
-          pkbPokok: 1000000000,
-          opsenPkb: 660000000,
-          bbnkbPokok: 800000000,
-          opsenBbnkb: 528000000,
-        },
-      ]);
-    }
-
-    const result = rawData.map((d, i) => ({
-      id: i + 1,
-      name: d.kecamatan,
-      target: 2000000000, // mock dummy
-      pkbPokok: Number(d._sum.pkbPokok) || 0,
-      opsenPkb: Number(d._sum.opsenPkb) || 0,
-      bbnkbPokok: Number(d._sum.bbnkbPokok) || 0,
-      opsenBbnkb: Number(d._sum.opsenBbnkb) || 0,
-    }));
-
-    res.json(result);
+    res.json({
+      data: formattedData,
+      lastSync: finalSyncStr // Real max date
+    });
   } catch (error) {
-    res.status(500).json({ message: "Terjadi kesalahan server" });
+    console.error(error);
+    res.status(500).json({ message: "Gagal menarik data kecamatan dari Bapenda." });
   }
 });
 
@@ -543,43 +598,120 @@ app.get("/api/evaluasi/live-komparasi", async (req, res) => {
   }
 });
 
-// --- DATA PANEN ---
+// --- DATA PANEN & REKOMENDASI ---
+// Sinkronisasi Data Tunggakan (Mundur Teratur)
+
+app.post("/api/tunggakan/sync", async (req, res) => {
+  try {
+    const token = await getBapendaToken();
+    let currentDate = new Date();
+    let successData = null;
+    let fallbackCount = 0;
+    const MAX_FALLBACKS = 4; // Try up to 4 months back
+
+    while (fallbackCount < MAX_FALLBACKS) {
+      const targetMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const targetYear = String(currentDate.getFullYear());
+      
+      try {
+        const response = await axios.get("https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/summary-kecamatan", {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { 
+            bulan: targetMonth,
+            tahun: targetYear,
+            kode_kota: process.env.BAPENDA_KODE_KOTA || '3514' 
+          }
+        });
+        
+        const decoded = decodeBapendaResponse(response.data);
+        if (decoded && decoded.data && decoded.data.length > 0) {
+          successData = decoded;
+          break; // Found data, exit loop!
+        }
+      } catch (err) {
+        // If 404 or empty, ignore and continue to fallback
+        if (err.response && err.response.status !== 404 && err.response.status !== 400) {
+          console.error("[Bapenda Sync Error]", err.message);
+        }
+      }
+
+      // Fallback 1 month
+      currentDate.setMonth(currentDate.getMonth() - 1);
+      fallbackCount++;
+    }
+
+    if (!successData) {
+      return res.status(404).json({ message: "Gagal menarik data tunggakan, bahkan setelah proses mundur 4 bulan." });
+    }
+
+    // Process the successful data
+    const syncDate = successData.filter?.date?.akhir || new Date().toISOString().split('T')[0];
+    
+    // Update all DataTunggakan
+    for (const item of successData.data) {
+      await prisma.dataTunggakan.upsert({
+        where: { kecamatan: item.nama },
+        update: {
+          obyek: Number(item.objek) || 0,
+          potensi: Number(item.potensi) || 0
+        },
+        create: {
+          kecamatan: item.nama,
+          obyek: Number(item.objek) || 0,
+          potensi: Number(item.potensi) || 0
+        }
+      });
+    }
+
+    // Update metadata
+    await prisma.systemMetadata.upsert({
+      where: { id: "LAST_SYNC_TUNGGAKAN" },
+      update: { value: syncDate },
+      create: { id: "LAST_SYNC_TUNGGAKAN", value: syncDate }
+    });
+
+    res.json({ 
+      message: "Sinkronisasi berhasil!", 
+      syncedDate: syncDate,
+      totalRows: successData.data.length
+    });
+  } catch (error) {
+    console.error("Sync Tunggakan Error:", error);
+    res.status(500).json({ message: "Terjadi kesalahan internal saat sinkronisasi." });
+  }
+});
+
 app.get("/api/panen", async (req, res) => {
-  const data = await prisma.dataPanen.findMany();
+  const data = await prisma.jadwalPanen.findMany();
   res.json(data);
 });
+
 app.post("/api/upload/panen", upload.single("file"), async (req, res) => {
   try {
     const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
-    const data = xlsx.utils.sheet_to_json(
-      workbook.Sheets[workbook.SheetNames[0]],
-    );
-    const mapped = data.map((row) => ({
-      kecamatan: row["Kecamatan"]?.toString() || "",
-      desa: row["Desa"]?.toString() || null,
-      bulan: row["Bulan"]?.toString() || "Januari",
-      tahun: Number(row["Tahun"]) || new Date().getFullYear(),
-      statusPanen: row["Status Panen"]?.toString() || "Sedang",
-    }));
-    for (const row of mapped) {
-      const existing = await prisma.dataPanen.findFirst({
-        where: {
-          kecamatan: row.kecamatan,
-          desa: row.desa,
-          bulan: row.bulan,
-          tahun: row.tahun,
-        },
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const data = xlsx.utils.sheet_to_json(sheet);
+
+    for (const row of data) {
+      if (!row.Kecamatan) continue;
+
+      const rowData = {
+        kecamatan: row.Kecamatan.toString(),
+        padi: row["Tan. Padi"]?.toString() || "0",
+        palawija: row["Tanaman Palawija"]?.toString() || "0",
+        hortikultura: row["Tanaman Hortikultura"]?.toString() || "0",
+        tebu: row["Tanaman Tebu"]?.toString() || "0",
+        keterangan: row.Keterangan?.toString() || "",
+      };
+
+      await prisma.jadwalPanen.upsert({
+        where: { kecamatan: rowData.kecamatan },
+        update: rowData,
+        create: rowData,
       });
-      if (existing) {
-        await prisma.dataPanen.update({
-          where: { id: existing.id },
-          data: row,
-        });
-      } else {
-        await prisma.dataPanen.create({ data: row });
-      }
     }
-    res.json({ message: "Data Panen berhasil diunggah" });
+
+    res.json({ message: "Data Jadwal Panen berhasil diunggah" });
   } catch (error) {
     res.status(500).json({ message: "Gagal upload Data Panen" });
   }
@@ -587,39 +719,51 @@ app.post("/api/upload/panen", upload.single("file"), async (req, res) => {
 
 // --- DATA TUNGGAKAN ---
 app.get("/api/tunggakan", async (req, res) => {
-  const data = await prisma.dataTunggakan.findMany();
-  res.json(data);
+  try {
+    const data = await prisma.dataTunggakan.findMany();
+    const metadata = await prisma.systemMetadata.findUnique({
+      where: { id: "LAST_SYNC_TUNGGAKAN" }
+    });
+    res.json({ 
+      data, 
+      lastSync: metadata?.value || null 
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Gagal mengambil data tunggakan" });
+  }
 });
 app.post("/api/upload/tunggakan", upload.single("file"), async (req, res) => {
   try {
     const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
-    const data = xlsx.utils.sheet_to_json(
-      workbook.Sheets[workbook.SheetNames[0]],
-    );
-    const mapped = data.map((row) => ({
-      kecamatan: row["Kecamatan"]?.toString() || "",
-      desa: row["Desa"]?.toString() || null,
-      bulan: row["Bulan"]?.toString() || "Januari",
-      tahun: Number(row["Tahun"]) || new Date().getFullYear(),
-      rasioTunggakan: Number(row["Rasio Tunggakan (%)"]) || 0,
-    }));
-    for (const row of mapped) {
-      const existing = await prisma.dataTunggakan.findFirst({
-        where: {
-          kecamatan: row.kecamatan,
-          desa: row.desa,
-          bulan: row.bulan,
-          tahun: row.tahun,
-        },
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const data = xlsx.utils.sheet_to_json(sheet);
+
+    for (const row of data) {
+      // Allow lowercase keys just in case
+      const kecamatanRaw = row["Kecamatan"] || row["obyek"] || row["KECAMATAN"] || Object.values(row)[1];
+      if (!kecamatanRaw) continue;
+
+      // Excel parses dots in numbers based on locale, handle potential formats
+      const cleanInt = (val) => {
+        if (!val) return 0;
+        if (typeof val === 'number') return val;
+        return parseInt(val.toString().replace(/\D/g, ''), 10) || 0;
+      };
+
+      const obyekVal = cleanInt(row["Obyek"] || row["obyek"]);
+      const potensiVal = cleanInt(row["Potensi"] || row["potensi"]);
+
+      const rowData = {
+        kecamatan: kecamatanRaw.toString().trim(),
+        obyek: obyekVal,
+        potensi: potensiVal,
+      };
+
+      await prisma.dataTunggakan.upsert({
+        where: { kecamatan: rowData.kecamatan },
+        update: rowData,
+        create: rowData,
       });
-      if (existing) {
-        await prisma.dataTunggakan.update({
-          where: { id: existing.id },
-          data: row,
-        });
-      } else {
-        await prisma.dataTunggakan.create({ data: row });
-      }
     }
     res.json({ message: "Data Tunggakan berhasil diunggah" });
   } catch (error) {
@@ -768,21 +912,22 @@ const createTemplate = (res, filename, columns) => {
 
 app.get("/api/template/panen", (req, res) =>
   createTemplate(res, "Template_Panen", [
+    "No",
     "Kecamatan",
-    "Desa",
-    "Bulan",
-    "Tahun",
-    "Status Panen",
-  ]),
+    "Tan. Padi",
+    "Tanaman Palawija",
+    "Tanaman Hortikultura",
+    "Tanaman Tebu",
+    "Keterangan",
+  ])
 );
 app.get("/api/template/tunggakan", (req, res) =>
   createTemplate(res, "Template_Tunggakan", [
+    "No",
     "Kecamatan",
-    "Desa",
-    "Bulan",
-    "Tahun",
-    "Rasio Tunggakan (%)",
-  ]),
+    "Obyek",
+    "Potensi",
+  ])
 );
 app.get("/api/template/target", (req, res) =>
   createTemplate(res, "Template_Target", [
@@ -829,47 +974,138 @@ app.get("/api/test-notification", async (req, res) => {
 });
 
 // --- REKOMENDASI TINDAKAN API ---
-app.get("/api/rekomendasi", (req, res) => {
-  // TODO: Replace with real DB Query when Panen & Tunggakan data is available
-  const mockData = [
-    {
-      id: 1,
-      kecamatan: "Plaosan",
-      tipe: "Operasi Gabungan",
-      alasan:
-        "Wilayah masuk masa panen raya sayuran, namun tingkat tunggakan pajak PKB/BBNKB mencapai 45% dari potensi wilayah.",
-      dataPanen: "Tinggi",
-      dataTunggakan: "45%",
-    },
-    {
-      id: 2,
-      kecamatan: "Maospati",
-      tipe: "Sosialisasi",
-      alasan:
-        "Tidak sedang dalam masa panen, daya beli masyarakat cenderung stabil/menurun, namun tingkat tunggakan cukup tinggi.",
-      dataPanen: "Rendah",
-      dataTunggakan: "30%",
-    },
-    {
-      id: 3,
-      kecamatan: "Magetan",
-      tipe: "Operasi Gabungan",
-      alasan:
-        "Pusat perputaran ekonomi daerah, banyak kendaraan terpusat dengan rasio tunggakan kendaraan roda 4 mencapai 20%.",
-      dataPanen: "Sedang",
-      dataTunggakan: "20%",
-    },
-    {
-      id: 4,
-      kecamatan: "Panekan",
-      tipe: "Sosialisasi",
-      alasan:
-        "Masa panen padi mulai berakhir, tunggakan masih di batas wajar. Pendekatan persuasif (door-to-door) disarankan.",
-      dataPanen: "Sedang",
-      dataTunggakan: "15%",
-    },
-  ];
-  res.json(mockData);
+app.get("/api/rekomendasi", async (req, res) => {
+  try {
+    const jadwalPanenList = await prisma.jadwalPanen.findMany();
+    const currentMonthIndex = new Date().getMonth(); // 0-11
+    const months = [
+      "januari", "pebruari", "maret", "april", "mei", "juni", 
+      "juli", "agustus", "september", "oktober", "nopember", "desember"
+    ];
+    // Juga handle februari (kadang ditulis pebruari)
+    const currentMonthStr = months[currentMonthIndex];
+    const currentMonthAlternate = currentMonthIndex === 1 ? "februari" : currentMonthStr;
+
+    // Helper untuk mengecek apakah bulan saat ini ada di dalam string jadwal
+    const isHarvestingNow = (scheduleStr) => {
+      if (!scheduleStr || scheduleStr === "0") return false;
+      const str = scheduleStr.toLowerCase();
+      
+      // Cek exact match atau comma separated
+      if (str.includes(currentMonthStr) || str.includes(currentMonthAlternate)) return true;
+      
+      // Cek rentang waktu (misal "Juni - Agustus")
+      if (str.includes("-")) {
+        const parts = str.split("-").map(p => p.trim());
+        if (parts.length === 2) {
+          let startIdx = months.indexOf(parts[0]);
+          if (parts[0] === "februari") startIdx = 1;
+          let endIdx = months.indexOf(parts[1]);
+          if (parts[1] === "februari") endIdx = 1;
+
+          if (startIdx !== -1 && endIdx !== -1) {
+            // Handle cross-year (e.g., November - Februari)
+            if (startIdx <= endIdx) {
+              if (currentMonthIndex >= startIdx && currentMonthIndex <= endIdx) return true;
+            } else {
+              if (currentMonthIndex >= startIdx || currentMonthIndex <= endIdx) return true;
+            }
+          }
+        }
+      }
+      return false;
+    };
+
+    const rekomendasiData = await Promise.all(jadwalPanenList.map(async (panen, index) => {
+      const isPadi = isHarvestingNow(panen.padi);
+      const isPalawija = isHarvestingNow(panen.palawija);
+      const isHorti = isHarvestingNow(panen.hortikultura);
+      const isTebu = isHarvestingNow(panen.tebu);
+
+      const hasHarvest = isPadi || isPalawija || isHorti || isTebu;
+      
+      let activeCommodities = [];
+      if (isPadi) activeCommodities.push("Padi");
+      if (isPalawija) activeCommodities.push("Palawija");
+      if (isHorti) activeCommodities.push("Hortikultura");
+      if (isTebu) activeCommodities.push("Tebu");
+
+      // Get real tunggakan data
+      const tunggakanData = await prisma.dataTunggakan.findUnique({
+        where: { kecamatan: panen.kecamatan }
+      });
+
+      // Format Potensi ke format Rupiah Miliaran/Jutaan agar lebih enak dibaca
+      const formatRupiah = (num) => {
+        if (!num) return "Rp 0";
+        const val = Number(num);
+        if (val >= 1000000000) {
+          return `Rp ${(val / 1000000000).toFixed(2)} Miliar`;
+        } else if (val >= 1000000) {
+          return `Rp ${(val / 1000000).toFixed(2)} Juta`;
+        }
+        return `Rp ${val.toLocaleString('id-ID')}`;
+      };
+
+      const potensiStr = formatRupiah(tunggakanData?.potensi);
+      const obyekCount = tunggakanData?.obyek || 0;
+
+      let tipe = "";
+      let alasan = "";
+      let dataPanenStatus = hasHarvest ? "Sedang Panen" : "Belum Panen";
+      
+      let priorityLevel = 3; // 1 = Utama, 2 = Menengah, 3 = Rendah
+      let priorityText = "";
+
+      const ONE_BILLION = 1000000000;
+
+      if (hasHarvest && tunggakanData?.potensi > ONE_BILLION) {
+        priorityLevel = 1;
+        priorityText = "Prioritas Utama";
+        tipe = "Operasi Gabungan";
+        alasan = `Wilayah ini sedang memasuki masa panen raya (${activeCommodities.join(", ")}). Daya beli masyarakat sedang tinggi, sangat ideal untuk penagihan aktif (Operasi Gabungan/Door-to-door) mengingat potensi tunggakan mencapai ${potensiStr} dari ${obyekCount.toLocaleString('id-ID')} obyek kendaraan.`;
+      } else if (hasHarvest && tunggakanData?.potensi <= ONE_BILLION) {
+        priorityLevel = 2;
+        priorityText = "Prioritas Menengah";
+        tipe = "Door-to-door";
+        alasan = `Wilayah ini sedang panen raya (${activeCommodities.join(", ")}). Potensi tunggakan sebesar ${potensiStr} (${obyekCount.toLocaleString('id-ID')} obyek) dapat dimaksimalkan melalui pendekatan persuasif (Door-to-door).`;
+      } else if (!hasHarvest && tunggakanData?.potensi > ONE_BILLION) {
+        priorityLevel = 2;
+        priorityText = "Prioritas Menengah";
+        tipe = "Sosialisasi Khusus";
+        alasan = `Meskipun belum memasuki masa panen, wilayah ini butuh perhatian khusus karena besarnya potensi tunggakan yang mencapai ${potensiStr} dari ${obyekCount.toLocaleString('id-ID')} obyek kendaraan.`;
+      } else {
+        priorityLevel = 3;
+        priorityText = "Prioritas Rendah";
+        tipe = "Sosialisasi Rutin";
+        alasan = `Wilayah ini belum memasuki masa panen komoditas utama dan potensi tunggakan relatif terkendali (${potensiStr}). Sosialisasi PKB/BBNKB rutin disarankan.`;
+      }
+
+      return {
+        id: panen.id,
+        kecamatan: panen.kecamatan,
+        tipe,
+        alasan,
+        dataPanen: dataPanenStatus,
+        dataTunggakan: potensiStr, 
+        priorityLevel,
+        priorityText
+      };
+    }));
+
+    // Sort by priority level (1 first, then 2, then 3) and then by potential tunggakan descending
+    rekomendasiData.sort((a, b) => {
+      if (a.priorityLevel !== b.priorityLevel) {
+        return a.priorityLevel - b.priorityLevel;
+      }
+      // If same priority, could sort by something else, but this is fine for now.
+      return 0;
+    });
+
+    res.json(rekomendasiData);
+  } catch (error) {
+    res.status(500).json({ message: "Gagal mengambil data rekomendasi" });
+  }
 });
 
 // --- NOTIFICATION SETTING API ---

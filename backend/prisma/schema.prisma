@@ -70,12 +70,29 @@ model DataPanen {
   createdAt    DateTime @default(now())
 }
 
+model JadwalPanen {
+  id           Int      @id @default(autoincrement())
+  kecamatan    String   @unique
+  padi         String   @default("0")
+  palawija     String   @default("0")
+  hortikultura String   @default("0")
+  tebu         String   @default("0")
+  keterangan   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
 model DataTunggakan {
   id             Int      @id @default(autoincrement())
-  kecamatan      String
-  desa           String?
-  bulan          String
-  tahun          Int
-  rasioTunggakan Decimal  @db.Decimal(5, 2) // Percentage e.g. 45.50
+  kecamatan      String   @unique
+  obyek          Int
+  potensi        Decimal  @db.Decimal(15, 2)
   createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model SystemMetadata {
+  id        String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }
