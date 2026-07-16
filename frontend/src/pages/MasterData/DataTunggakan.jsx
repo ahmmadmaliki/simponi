@@ -46,13 +46,11 @@ export default function DataTunggakan() {
     }
   });
 
-
-
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       uploadMutation.mutate(file);
-      e.target.value = null;
+      e.target.value = null; // reset input
     }
   };
 
@@ -90,7 +88,7 @@ export default function DataTunggakan() {
           <button 
             onClick={() => fileInputRef.current?.click()}
             disabled={uploadMutation.isPending}
-            className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-bold transition-colors disabled:opacity-50"
           >
             <Upload size={20} />
             {uploadMutation.isPending ? 'Mengunggah...' : 'Unggah Excel'}

@@ -599,87 +599,10 @@ app.get("/api/evaluasi/live-komparasi", async (req, res) => {
 });
 
 // --- DATA PANEN & REKOMENDASI ---
-// Sinkronisasi Data Tunggakan (Mundur Teratur)
 
-app.post("/api/tunggakan/sync", async (req, res) => {
-  try {
-    const token = await getBapendaToken();
-    let currentDate = new Date();
-    let successData = null;
-    let fallbackCount = 0;
-    const MAX_FALLBACKS = 4; // Try up to 4 months back
 
-    while (fallbackCount < MAX_FALLBACKS) {
-      const targetMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
-      const targetYear = String(currentDate.getFullYear());
-      
-      try {
-        const response = await axios.get("https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/summary-kecamatan", {
-          headers: { Authorization: `Bearer ${token}` },
-          params: { 
-            bulan: targetMonth,
-            tahun: targetYear,
-            kode_kota: process.env.BAPENDA_KODE_KOTA || '3514' 
-          }
-        });
-        
-        const decoded = decodeBapendaResponse(response.data);
-        if (decoded && decoded.data && decoded.data.length > 0) {
-          successData = decoded;
-          break; // Found data, exit loop!
-        }
-      } catch (err) {
-        // If 404 or empty, ignore and continue to fallback
-        if (err.response && err.response.status !== 404 && err.response.status !== 400) {
-          console.error("[Bapenda Sync Error]", err.message);
-        }
-      }
 
-      // Fallback 1 month
-      currentDate.setMonth(currentDate.getMonth() - 1);
-      fallbackCount++;
-    }
 
-    if (!successData) {
-      return res.status(404).json({ message: "Gagal menarik data tunggakan, bahkan setelah proses mundur 4 bulan." });
-    }
-
-    // Process the successful data
-    const syncDate = successData.filter?.date?.akhir || new Date().toISOString().split('T')[0];
-    
-    // Update all DataTunggakan
-    for (const item of successData.data) {
-      await prisma.dataTunggakan.upsert({
-        where: { kecamatan: item.nama },
-        update: {
-          obyek: Number(item.objek) || 0,
-          potensi: Number(item.potensi) || 0
-        },
-        create: {
-          kecamatan: item.nama,
-          obyek: Number(item.objek) || 0,
-          potensi: Number(item.potensi) || 0
-        }
-      });
-    }
-
-    // Update metadata
-    await prisma.systemMetadata.upsert({
-      where: { id: "LAST_SYNC_TUNGGAKAN" },
-      update: { value: syncDate },
-      create: { id: "LAST_SYNC_TUNGGAKAN", value: syncDate }
-    });
-
-    res.json({ 
-      message: "Sinkronisasi berhasil!", 
-      syncedDate: syncDate,
-      totalRows: successData.data.length
-    });
-  } catch (error) {
-    console.error("Sync Tunggakan Error:", error);
-    res.status(500).json({ message: "Terjadi kesalahan internal saat sinkronisasi." });
-  }
-});
 
 app.get("/api/panen", async (req, res) => {
   const data = await prisma.jadwalPanen.findMany();
