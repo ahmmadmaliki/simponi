@@ -696,11 +696,24 @@ app.post("/api/upload/tunggakan", upload.single("file"), async (req, res) => {
 
 // --- DATA KINERJA KEGIATAN ---
 app.get("/api/master/kinerja", async (req, res) => {
-  const data = await prisma.kegiatan.findMany({
-    orderBy: [{ tahun: "desc" }],
-  });
-  res.json(data);
+  try {
+    const data = await prisma.kegiatan.findMany({ orderBy: { tahun: "desc" } });
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ message: "Gagal mengambil data Kinerja" });
+  }
 });
+
+app.delete("/api/master/kinerja/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.kegiatan.delete({ where: { id: Number(id) } });
+    res.json({ message: "Data berhasil dihapus" });
+  } catch (error) {
+    res.status(500).json({ message: "Gagal menghapus data" });
+  }
+});
+
 app.post("/api/upload/kinerja", upload.single("file"), async (req, res) => {
   try {
     const workbook = xlsx.read(req.file.buffer, { type: "buffer" });

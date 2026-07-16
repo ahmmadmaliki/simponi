@@ -129,20 +129,20 @@ export default function Dashboard() {
     const headers = [
       "No",
       "Kecamatan",
-      "Target PKB",
-      "Realisasi PKB",
-      "Target BBNKB",
-      "Realisasi BBNKB",
-      "Total Realisasi",
+      "PKB Pokok",
+      "Opsen PKB",
+      "BBNKB Pokok",
+      "Opsen BBNKB",
+      "Total Realisasi Opsen",
     ];
     const rows = kecamatanData.map((d, i) => [
       i + 1,
       d.name,
-      d.target || 0,
-      d.opsenPkb || 0,
-      d.target || 0,
-      d.opsenBbnkb || 0,
-      (d.opsenPkb || 0) + (d.opsenBbnkb || 0),
+      Math.round(d.pkbPokok || 0),
+      Math.round(d.opsenPkb || 0),
+      Math.round(d.bbnkbPokok || 0),
+      Math.round(d.opsenBbnkb || 0),
+      Math.round((d.opsenPkb || 0) + (d.opsenBbnkb || 0)),
     ]);
     const csvContent = [
       headers.join(";"),

@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../api/axios';
-import { Upload, Download, FileSpreadsheet, Search } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, Search, Trash2 } from 'lucide-react';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
 export default function DataKinerja() {
@@ -47,6 +47,26 @@ export default function DataKinerja() {
       alert('Gagal mengunggah data. Pastikan format kolom: Jenis Kegiatan, Target Jumlah, Realisasi Jumlah, Tahun.');
     }
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id) => {
+      const res = await api.delete(`/master/kinerja/${id}`);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['dataMasterKinerja']);
+      alert('Data berhasil dihapus!');
+    },
+    onError: () => {
+      alert('Gagal menghapus data.');
+    }
+  });
+
+  const handleDelete = (id) => {
+    if (window.confirm("Apakah Anda yakin ingin menghapus data ini?")) {
+      deleteMutation.mutate(id);
+    }
+  };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -122,18 +142,19 @@ export default function DataKinerja() {
                 <th className="p-4 font-semibold border-b border-slate-200 text-right">Target Jumlah</th>
                 <th className="p-4 font-semibold border-b border-slate-200 text-right">Realisasi Jumlah</th>
                 <th className="p-4 font-semibold border-b border-slate-200 text-center">Capaian</th>
+                <th className="p-4 font-semibold border-b border-slate-200 text-center">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan="5" className="p-8 text-center text-slate-500">
+                  <td colSpan="6" className="p-8 text-center text-slate-500">
                     <LoadingSpinner className="mx-auto w-8 h-8 text-primary-500" />
                   </td>
                 </tr>
               ) : currentItems.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="p-8 text-center text-slate-500">Belum ada data Kinerja Kegiatan yang diunggah.</td>
+                  <td colSpan="6" className="p-8 text-center text-slate-500">Belum ada data Kinerja Kegiatan yang diunggah.</td>
                 </tr>
               ) : (
                 currentItems.map((item, idx) => {
@@ -153,6 +174,15 @@ export default function DataKinerja() {
                         }`}>
                           {capaian}%
                         </span>
+                      </td>
+                      <td className="p-4 text-center">
+                        <button 
+                          onClick={() => handleDelete(item.id)}
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Hapus Data"
+                        >
+                          <Trash2 size={18} />
+                        </button>
                       </td>
                     </tr>
                   );
