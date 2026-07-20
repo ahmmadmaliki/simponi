@@ -490,7 +490,7 @@ app.get("/api/kinerja", async (req, res) => {
     const rawData = await prisma.kegiatan.groupBy({
       by: ["jenisKegiatan"],
       where: whereClause,
-      _sum: { targetJumlah: true, realisasiJumlah: true },
+      _sum: { targetJumlah: true, realisasiJumlah: true, targetAnggaran: true, realisasiAnggaran: true },
     });
 
     const result = rawData.map((d, i) => ({
@@ -498,6 +498,8 @@ app.get("/api/kinerja", async (req, res) => {
       nama: d.jenisKegiatan,
       target: d._sum.targetJumlah || 0,
       realisasi: d._sum.realisasiJumlah || 0,
+      targetAnggaran: d._sum.targetAnggaran ? Number(d._sum.targetAnggaran) : 0,
+      realisasiAnggaran: d._sum.realisasiAnggaran ? Number(d._sum.realisasiAnggaran) : 0,
       jenis: "Program Kerja",
     }));
 
@@ -757,12 +759,21 @@ app.post("/api/upload/kinerja", upload.single("file"), async (req, res) => {
     const data = xlsx.utils.sheet_to_json(
       workbook.Sheets[workbook.SheetNames[0]],
     );
-    const mapped = data.map((row) => ({
-      jenisKegiatan: row["Jenis Kegiatan"]?.toString() || "",
-      targetJumlah: Number(row["Target Jumlah"]) || 0,
-      realisasiJumlah: Number(row["Realisasi Jumlah"]) || 0,
-      tahun: Number(row["Tahun"]) || new Date().getFullYear(),
-    }));
+      const mapped = data.map((row) => {
+        const cleanNumber = (val) => {
+          if (!val) return 0;
+          if (typeof val === 'number') return val;
+          return Number(val.toString().replace(/[^0-9.-]+/g, "")) || 0;
+        };
+        return {
+          jenisKegiatan: row["Jenis Kegiatan"]?.toString() || "",
+          targetJumlah: Number(row["Target Jumlah"]) || 0,
+          realisasiJumlah: Number(row["Realisasi Jumlah"]) || 0,
+          targetAnggaran: cleanNumber(row["Target Anggaran"]),
+          realisasiAnggaran: cleanNumber(row["Realisasi Anggaran"]),
+          tahun: Number(row["Tahun"]) || new Date().getFullYear(),
+        };
+      });
     for (const row of mapped) {
       const existing = await prisma.kegiatan.findFirst({
         where: {
@@ -922,14 +933,16 @@ app.get("/api/template/realisasi", (req, res) =>
     "Total Realisasi Opsen",
   ]),
 );
-app.get("/api/template/kinerja", (req, res) =>
-  createTemplate(res, "Template_Kinerja_Kegiatan", [
-    "Jenis Kegiatan",
-    "Target Jumlah",
-    "Realisasi Jumlah",
-    "Tahun",
-  ]),
-);
+  app.get("/api/template/kinerja", (req, res) =>
+    createTemplate(res, "Template_Kinerja_Kegiatan", [
+      "Jenis Kegiatan",
+      "Target Jumlah",
+      "Realisasi Jumlah",
+      "Target Anggaran",
+      "Realisasi Anggaran",
+      "Tahun",
+    ]),
+  );
 
 // Manual Trigger for Notification Testing
 app.get("/api/test-notification", async (req, res) => {

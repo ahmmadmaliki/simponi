@@ -141,20 +141,21 @@ export default function DataKinerja() {
                 <th className="p-4 font-semibold border-b border-slate-200 text-center">Tahun</th>
                 <th className="p-4 font-semibold border-b border-slate-200 text-right">Target Jumlah</th>
                 <th className="p-4 font-semibold border-b border-slate-200 text-right">Realisasi Jumlah</th>
-                <th className="p-4 font-semibold border-b border-slate-200 text-center">Capaian</th>
+                <th className="p-4 font-semibold border-b border-slate-200 text-right">Target Anggaran</th>
+                <th className="p-4 font-semibold border-b border-slate-200 text-right">Realisasi Anggaran</th>
                 <th className="p-4 font-semibold border-b border-slate-200 text-center">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan="6" className="p-8 text-center text-slate-500">
+                  <td colSpan="7" className="p-8 text-center text-slate-500">
                     <LoadingSpinner className="mx-auto w-8 h-8 text-primary-500" />
                   </td>
                 </tr>
               ) : currentItems.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="p-8 text-center text-slate-500">Belum ada data Kinerja Kegiatan yang diunggah.</td>
+                  <td colSpan="7" className="p-8 text-center text-slate-500">Belum ada data Kinerja Kegiatan yang diunggah.</td>
                 </tr>
               ) : (
                 currentItems.map((item, idx) => {
@@ -167,13 +168,11 @@ export default function DataKinerja() {
                       <td className="p-4 text-slate-600 text-center">{item.tahun}</td>
                       <td className="p-4 text-slate-800 text-right font-semibold">{item.targetJumlah}</td>
                       <td className="p-4 text-slate-800 text-right font-semibold">{item.realisasiJumlah}</td>
-                      <td className="p-4 text-center">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                          capaian >= 100 ? 'bg-emerald-100 text-emerald-700' :
-                          capaian >= 80 ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'
-                        }`}>
-                          {capaian}%
-                        </span>
+                      <td className="p-4 text-slate-600 text-right font-medium text-sm">
+                        {item.targetAnggaran ? `Rp ${Number(item.targetAnggaran).toLocaleString('id-ID')}` : '-'}
+                      </td>
+                      <td className="p-4 text-emerald-600 text-right font-semibold text-sm">
+                        {item.realisasiAnggaran ? `Rp ${Number(item.realisasiAnggaran).toLocaleString('id-ID')}` : '-'}
                       </td>
                       <td className="p-4 text-center">
                         <button 

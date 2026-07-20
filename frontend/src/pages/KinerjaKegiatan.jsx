@@ -1,4 +1,4 @@
-import { CheckSquare, Calendar, Users, Percent } from 'lucide-react';
+import { CheckSquare, Calendar, Users, Percent, DollarSign, CreditCard, TrendingUp } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../api/axios';
 import { useState } from 'react';
@@ -23,6 +23,10 @@ export default function KinerjaKegiatan() {
   const totalRealisasi = validData.reduce((acc, curr) => acc + curr.realisasi, 0);
   const persentaseTotal = totalTarget > 0 ? Math.round((totalRealisasi / totalTarget) * 100) : 0;
 
+  const totalTargetAnggaran = validData.reduce((acc, curr) => acc + (curr.targetAnggaran || 0), 0);
+  const totalRealisasiAnggaran = validData.reduce((acc, curr) => acc + (curr.realisasiAnggaran || 0), 0);
+  const persentaseAnggaran = totalTargetAnggaran > 0 ? Math.round((totalRealisasiAnggaran / totalTargetAnggaran) * 100) : 0;
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row justify-between md:items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-200 gap-4">
@@ -45,41 +49,68 @@ export default function KinerjaKegiatan() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex items-center gap-4">
-          <div className="bg-primary-100 text-primary-600 p-4 rounded-full">
-            <CheckSquare size={36} />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Card Kegiatan */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="bg-primary-100 text-primary-600 p-3 rounded-xl">
+              <CheckSquare size={24} />
+            </div>
+            <h3 className="text-xl font-bold text-slate-800">Ringkasan Kegiatan</h3>
           </div>
-          <div>
-            <p className="text-slate-500 font-bold text-lg uppercase">Total Rencana</p>
-            <h3 className="text-4xl font-black text-slate-800">{totalTarget}</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+              <p className="text-slate-500 font-bold text-xs uppercase mb-1">Total Rencana</p>
+              <p className="text-2xl font-black text-slate-800">{totalTarget}</p>
+            </div>
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+              <p className="text-slate-500 font-bold text-xs uppercase mb-1">Terlaksana</p>
+              <p className="text-2xl font-black text-slate-800">{totalRealisasi}</p>
+            </div>
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+              <p className="text-slate-500 font-bold text-xs uppercase mb-1">Total Program</p>
+              <p className="text-2xl font-black text-slate-800">{validData.length}</p>
+            </div>
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+              <p className="text-slate-500 font-bold text-xs uppercase mb-1">Persentase</p>
+              <p className="text-2xl font-black text-primary-600">{persentaseTotal}%</p>
+            </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-5">
-          <div className="bg-indigo-100 text-indigo-600 p-4 rounded-full">
-            <Calendar size={36} />
+
+        {/* Card Anggaran */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="bg-emerald-100 text-emerald-600 p-3 rounded-xl">
+              <DollarSign size={24} />
+            </div>
+            <h3 className="text-xl font-bold text-slate-800">Ringkasan Anggaran</h3>
           </div>
-          <div>
-            <p className="text-slate-500 font-bold text-lg uppercase">Terlaksana</p>
-            <h3 className="text-4xl font-black text-slate-800">{totalRealisasi}</h3>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-5">
-          <div className="bg-green-100 text-green-600 p-4 rounded-full">
-            <Percent size={36} />
-          </div>
-          <div>
-            <p className="text-slate-500 font-bold text-lg uppercase">Persentase</p>
-            <h3 className="text-4xl font-black text-slate-800">{persentaseTotal}%</h3>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-5">
-          <div className="bg-orange-100 text-orange-600 p-4 rounded-full">
-            <Users size={36} />
-          </div>
-          <div>
-            <p className="text-slate-500 font-bold text-lg uppercase">Total Kegiatan</p>
-            <h3 className="text-4xl font-black text-slate-800">{validData.length}</h3>
+          <div className="space-y-5">
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex justify-between items-center">
+              <div>
+                <p className="text-slate-500 font-bold text-xs uppercase mb-1">Total Anggaran</p>
+                <p className="text-xl lg:text-2xl font-black text-slate-800">Rp {totalTargetAnggaran.toLocaleString('id-ID')}</p>
+              </div>
+            </div>
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+              <div className="flex justify-between items-center mb-3">
+                <div>
+                  <p className="text-slate-500 font-bold text-xs uppercase mb-1">Realisasi Dana</p>
+                  <p className="text-xl lg:text-2xl font-black text-emerald-600">Rp {totalRealisasiAnggaran.toLocaleString('id-ID')}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-slate-500 font-bold text-xs uppercase mb-1">Serapan</p>
+                  <p className="text-xl font-black text-emerald-600">{persentaseAnggaran}%</p>
+                </div>
+              </div>
+              <div className="bg-slate-200 rounded-full h-3 w-full overflow-hidden">
+                <div 
+                  className="h-full bg-emerald-500 rounded-full" 
+                  style={{ width: `${Math.min(persentaseAnggaran, 100)}%` }}
+                ></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -92,6 +123,7 @@ export default function KinerjaKegiatan() {
             <p className="text-center font-bold text-xl text-slate-500 py-10">Memuat Data Kegiatan...</p>
           ) : validData.map((kegiatan) => {
             const progress = kegiatan.target > 0 ? (kegiatan.realisasi / kegiatan.target) * 100 : 0;
+            const budgetProgress = kegiatan.targetAnggaran > 0 ? (kegiatan.realisasiAnggaran / kegiatan.targetAnggaran) * 100 : 0;
             return (
               <div key={kegiatan.id} className="border border-slate-200 rounded-xl p-6 hover:shadow-md transition-shadow">
                 <div className="flex flex-col lg:flex-row justify-between mb-4 gap-4">
@@ -117,6 +149,25 @@ export default function KinerjaKegiatan() {
                   <span className={progress >= 100 ? 'text-green-600' : progress >= 50 ? 'text-primary-600' : 'text-yellow-600'}>
                     {progress.toFixed(0)}%
                   </span>
+                </div>
+                
+                {/* Budget Section */}
+                <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div>
+                    <p className="text-xs text-slate-500 font-bold uppercase mb-1">Target Anggaran</p>
+                    <p className="text-lg font-semibold text-slate-700">
+                      Rp {kegiatan.targetAnggaran?.toLocaleString('id-ID') || 0}
+                    </p>
+                  </div>
+                  <div className="text-left md:text-right">
+                    <p className="text-xs text-slate-500 font-bold uppercase mb-1">Realisasi Anggaran</p>
+                    <div className="text-lg font-bold text-emerald-600 flex flex-wrap items-center gap-2 justify-start md:justify-end">
+                      Rp {kegiatan.realisasiAnggaran?.toLocaleString('id-ID') || 0}
+                      <span className="text-sm font-semibold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
+                        {budgetProgress.toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             )

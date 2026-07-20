@@ -47,6 +47,8 @@ model Kegiatan {
   targetJumlah     Int
   realisasiJumlah  Int
   tahun            Int
+  targetAnggaran   Decimal  @default(0) @db.Decimal(15, 2)
+  realisasiAnggaran Decimal @default(0) @db.Decimal(15, 2)
   createdAt        DateTime @default(now())
 }
 
