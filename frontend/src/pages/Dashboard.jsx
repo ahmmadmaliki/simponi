@@ -7,9 +7,11 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import {
-  Area,
-  AreaChart,
+  Bar,
   CartesianGrid,
+  ComposedChart,
+  Legend,
+  Line,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -90,6 +92,24 @@ export default function Dashboard() {
 
   const kecamatanData = kecamatanResponse?.data || [];
   const lastSyncDate = kecamatanResponse?.lastSync || null;
+
+  const totalPKBPokok = kecamatanData.reduce(
+    (acc, curr) => acc + (curr.pkbPokok || 0),
+    0,
+  );
+  const totalOpsenPKB = kecamatanData.reduce(
+    (acc, curr) => acc + (curr.opsenPkb || 0),
+    0,
+  );
+  const totalBBNKBPokok = kecamatanData.reduce(
+    (acc, curr) => acc + (curr.bbnkbPokok || 0),
+    0,
+  );
+  const totalOpsenBBNKB = kecamatanData.reduce(
+    (acc, curr) => acc + (curr.opsenBbnkb || 0),
+    0,
+  );
+  const grandTotalOpsen = totalOpsenPKB + totalOpsenBBNKB;
 
   const { data: trendData, isLoading: loadingTrend } = useQuery({
     queryKey: [
@@ -240,7 +260,11 @@ export default function Dashboard() {
                 Realisasi Opsen PKB
               </p>
               <h3 className="text-3xl xl:text-4xl font-black text-slate-800 mt-2 truncate">
-                {loadingMetrics ? <LoadingSpinner size={24} className="inline-flex" /> : formatRupiah(realisasiPkb)}
+                {loadingMetrics ? (
+                  <LoadingSpinner size={24} className="inline-flex" />
+                ) : (
+                  formatRupiah(realisasiPkb)
+                )}
               </h3>
             </div>
             <div className="bg-primary-100 p-4 rounded-full text-primary-600 shrink-0">
@@ -255,8 +279,18 @@ export default function Dashboard() {
               ></div>
             </div>
             <p className="mt-3 text-lg font-semibold text-slate-600">
-              Terpenuhi: {loadingMetrics ? <LoadingSpinner size={16} className="inline-flex" /> : pkbPercent.toFixed(1)}
-              % dari {loadingMetrics ? <LoadingSpinner size={16} className="inline-flex" /> : formatRupiah(targetPkb)}
+              Terpenuhi:{" "}
+              {loadingMetrics ? (
+                <LoadingSpinner size={16} className="inline-flex" />
+              ) : (
+                pkbPercent.toFixed(1)
+              )}
+              % dari{" "}
+              {loadingMetrics ? (
+                <LoadingSpinner size={16} className="inline-flex" />
+              ) : (
+                formatRupiah(targetPkb)
+              )}
             </p>
           </div>
         </div>
@@ -271,7 +305,11 @@ export default function Dashboard() {
                 Realisasi Opsen BBNKB
               </p>
               <h3 className="text-3xl xl:text-4xl font-black text-slate-800 mt-2 truncate">
-                {loadingMetrics ? <LoadingSpinner size={24} className="inline-flex" /> : formatRupiah(realisasiBbnkb)}
+                {loadingMetrics ? (
+                  <LoadingSpinner size={24} className="inline-flex" />
+                ) : (
+                  formatRupiah(realisasiBbnkb)
+                )}
               </h3>
             </div>
             <div className="bg-green-100 p-4 rounded-full text-green-600 shrink-0">
@@ -287,8 +325,17 @@ export default function Dashboard() {
             </div>
             <p className="mt-3 text-lg font-semibold text-slate-600">
               Terpenuhi:{" "}
-              {loadingMetrics ? <LoadingSpinner size={16} className="inline-flex" /> : bbnkbPercent.toFixed(1)}% dari{" "}
-              {loadingMetrics ? <LoadingSpinner size={16} className="inline-flex" /> : formatRupiah(targetBbnkb)}
+              {loadingMetrics ? (
+                <LoadingSpinner size={16} className="inline-flex" />
+              ) : (
+                bbnkbPercent.toFixed(1)
+              )}
+              % dari{" "}
+              {loadingMetrics ? (
+                <LoadingSpinner size={16} className="inline-flex" />
+              ) : (
+                formatRupiah(targetBbnkb)
+              )}
             </p>
           </div>
         </div>
@@ -303,9 +350,11 @@ export default function Dashboard() {
                 Realisasi Total
               </p>
               <h3 className="text-3xl xl:text-4xl font-black text-slate-800 mt-2 truncate">
-                {loadingMetrics
-                  ? <LoadingSpinner size={24} className="inline-flex" />
-                  : formatRupiah(realisasiPkb + realisasiBbnkb)}
+                {loadingMetrics ? (
+                  <LoadingSpinner size={24} className="inline-flex" />
+                ) : (
+                  formatRupiah(realisasiPkb + realisasiBbnkb)
+                )}
               </h3>
             </div>
             <div className="bg-orange-100 p-4 rounded-full text-orange-600 shrink-0">
@@ -321,8 +370,17 @@ export default function Dashboard() {
             </div>
             <p className="mt-3 text-lg font-semibold text-slate-600">
               Terpenuhi:{" "}
-              {loadingMetrics ? <LoadingSpinner size={16} className="inline-flex" /> : totalPercent.toFixed(1)}% dari{" "}
-              {loadingMetrics ? <LoadingSpinner size={16} className="inline-flex" /> : formatRupiah(targetTotal)}
+              {loadingMetrics ? (
+                <LoadingSpinner size={16} className="inline-flex" />
+              ) : (
+                totalPercent.toFixed(1)
+              )}
+              % dari{" "}
+              {loadingMetrics ? (
+                <LoadingSpinner size={16} className="inline-flex" />
+              ) : (
+                formatRupiah(targetTotal)
+              )}
             </p>
           </div>
         </div>
@@ -337,9 +395,14 @@ export default function Dashboard() {
                 Sisa Target Total
               </p>
               <h3 className="text-4xl xl:text-4xl font-black mt-3 text-yellow-400 drop-shadow-md truncate">
-                {loadingMetrics
-                  ? <LoadingSpinner size={24} className="inline-flex text-yellow-400" />
-                  : formatRupiah(Math.max(sisaTarget, 0))}
+                {loadingMetrics ? (
+                  <LoadingSpinner
+                    size={24}
+                    className="inline-flex text-yellow-400"
+                  />
+                ) : (
+                  formatRupiah(Math.max(sisaTarget, 0))
+                )}
               </h3>
             </div>
             <div className="bg-primary-700/50 p-4 rounded-full text-yellow-400 shrink-0">
@@ -359,25 +422,34 @@ export default function Dashboard() {
         <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
           <h3 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-3">
             <TrendingUp className="text-primary-600" size={28} />
-            Trend Realisasi (Dalam Juta Rupiah)
+            Tingkat Realisasi (Dalam Juta Rupiah)
           </h3>
           <div className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trendData || []}>
+              <ComposedChart
+                data={(trendData || []).map((d) => ({
+                  ...d,
+                  totalOpsen: (d.pkb || 0) + (d.bbnkb || 0),
+                }))}
+              >
                 <CartesianGrid
                   strokeDasharray="3 3"
-                  vertical={false}
                   stroke="#e2e8f0"
+                  vertical={false}
                 />
                 <XAxis
                   dataKey="name"
-                  tick={{ fontSize: 16 }}
-                  tickLine={false}
                   axisLine={false}
-                  dy={10}
+                  tickLine={false}
+                  tick={{ fill: "#64748b", fontSize: 16, fontWeight: 500 }}
+                  dy={15}
                 />
                 <YAxis
-                  tickFormatter={(value) => new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(value)}
+                  tickFormatter={(value) =>
+                    new Intl.NumberFormat("id-ID", {
+                      maximumFractionDigits: 0,
+                    }).format(value)
+                  }
                   tick={{ fontSize: 16 }}
                   tickLine={false}
                   axisLine={false}
@@ -385,8 +457,10 @@ export default function Dashboard() {
                 />
                 <Tooltip
                   formatter={(value, name) => [
-                    new Intl.NumberFormat("id-ID", { maximumFractionDigits: 1 }).format(value),
-                    name
+                    new Intl.NumberFormat("id-ID", {
+                      maximumFractionDigits: 1,
+                    }).format(value),
+                    name,
                   ]}
                   contentStyle={{
                     borderRadius: "12px",
@@ -394,25 +468,36 @@ export default function Dashboard() {
                     fontWeight: "bold",
                   }}
                 />
-                <Area
-                  type="monotone"
+                <Legend wrapperStyle={{ paddingTop: "20px" }} />
+                <Bar
                   dataKey="pkb"
-                  name="PKB"
-                  stroke="#e11d48"
-                  fill="#e11d48"
-                  fillOpacity={0.2}
-                  strokeWidth={4}
+                  name="Opsen PKB"
+                  fill="#f43f5e"
+                  radius={[4, 4, 0, 0]}
+                  barSize={30}
                 />
-                <Area
-                  type="monotone"
+                <Bar
                   dataKey="bbnkb"
-                  name="BBNKB"
-                  stroke="#10b981"
+                  name="Opsen BBNKB"
                   fill="#10b981"
-                  fillOpacity={0.2}
-                  strokeWidth={4}
+                  radius={[4, 4, 0, 0]}
+                  barSize={30}
                 />
-              </AreaChart>
+                <Line
+                  type="monotone"
+                  dataKey="totalOpsen"
+                  name="Total Opsen"
+                  stroke="#f59e0b"
+                  strokeWidth={4}
+                  dot={{
+                    r: 6,
+                    fill: "#f59e0b",
+                    strokeWidth: 2,
+                    stroke: "#fff",
+                  }}
+                  activeDot={{ r: 8 }}
+                />
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -425,12 +510,17 @@ export default function Dashboard() {
             </h3>
             {lastSyncDate && (
               <div className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm font-bold border border-blue-100 whitespace-nowrap">
-                Data s.d. {new Date(lastSyncDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
+                Data s.d.{" "}
+                {new Date(lastSyncDate).toLocaleDateString("id-ID", {
+                  day: "2-digit",
+                  month: "long",
+                  year: "numeric",
+                })}
               </div>
             )}
           </div>
 
-          <div className="overflow-x-auto max-h-[400px] overflow-y-auto border border-slate-100 rounded-xl relative shadow-inner">
+          <div className="overflow-x-auto max-h-[500px] overflow-y-auto border border-slate-100 rounded-xl relative shadow-inner">
             <table className="w-full text-left">
               <thead className="sticky top-0 bg-slate-50 z-10 shadow-sm border-b-2 border-slate-200">
                 <tr>
@@ -464,13 +554,20 @@ export default function Dashboard() {
                       colSpan="7"
                       className="p-8 text-center text-slate-500 text-lg font-bold"
                     >
-                      <LoadingSpinner size={32} className="justify-center" text="Memuat data kecamatan..." />
+                      <LoadingSpinner
+                        size={32}
+                        className="justify-center"
+                        text="Memuat data kecamatan..."
+                      />
                     </td>
                   </tr>
                 ) : (
                   (kecamatanData || []).map((item) => {
                     const totalRealisasiOpsen = item.opsenPkb + item.opsenBbnkb;
-                    const percent = (totalRealisasiOpsen / item.target) * 100;
+                    const percent =
+                      grandTotalOpsen > 0
+                        ? (totalRealisasiOpsen / grandTotalOpsen) * 100
+                        : 0;
                     return (
                       <tr
                         key={item.id}
@@ -510,6 +607,33 @@ export default function Dashboard() {
                   })
                 )}
               </tbody>
+              {kecamatanData.length > 0 && !loadingKec && (
+                <tfoot className="sticky bottom-0 bg-slate-100 z-10 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] border-t-2 border-slate-300">
+                  <tr>
+                    <th className="p-4 text-base font-extrabold text-slate-800 bg-slate-100 whitespace-nowrap uppercase tracking-wider">
+                      TOTAL KESELURUHAN
+                    </th>
+                    <th className="p-4 text-base font-bold text-slate-800 bg-slate-100 whitespace-nowrap">
+                      {formatRupiah(totalPKBPokok)}
+                    </th>
+                    <th className="p-4 text-base font-bold text-primary-700 bg-slate-100 whitespace-nowrap">
+                      {formatRupiah(totalOpsenPKB)}
+                    </th>
+                    <th className="p-4 text-base font-bold text-slate-800 bg-slate-100 whitespace-nowrap">
+                      {formatRupiah(totalBBNKBPokok)}
+                    </th>
+                    <th className="p-4 text-base font-bold text-green-700 bg-slate-100 whitespace-nowrap">
+                      {formatRupiah(totalOpsenBBNKB)}
+                    </th>
+                    <th className="p-4 text-base font-bold text-slate-800 bg-slate-100 whitespace-nowrap">
+                      {formatRupiah(grandTotalOpsen)}
+                    </th>
+                    <th className="p-4 text-base font-bold text-slate-800 bg-slate-100 whitespace-nowrap">
+                      100%
+                    </th>
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
         </div>

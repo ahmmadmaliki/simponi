@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import cron from "node-cron";
+import { fetchMetricsForDateRange, getBapendaToken } from "./bapendaService.js";
 import { sendEmailAlert, sendWhatsAppAlert } from "./notificationService.js";
-import { getBapendaToken, fetchMetricsForDateRange } from "./bapendaService.js";
 
 const prisma = new PrismaClient();
 
@@ -29,9 +29,16 @@ const evaluateTargets = async () => {
 
     const token = await getBapendaToken();
     const kodeKota = process.env.BAPENDA_KODE_KOTA || "";
-    
-    console.log(`[CRON] Menarik data live Bapenda dari ${tglMulai} s/d ${tglAkhir}...`);
-    const metrics = await fetchMetricsForDateRange(tglMulai, tglAkhir, kodeKota, token);
+
+    console.log(
+      `[CRON] Menarik data live Bapenda dari ${tglMulai} s/d ${tglAkhir}...`,
+    );
+    const metrics = await fetchMetricsForDateRange(
+      tglMulai,
+      tglAkhir,
+      kodeKota,
+      token,
+    );
 
     const realisasiPKB = metrics.realisasiPkb;
     const realisasiBBNKB = metrics.realisasiBbnkb;
@@ -65,26 +72,25 @@ const evaluateTargets = async () => {
     if (realisasiTotal < expectedRealisasi) {
       emailSubject = "Peringatan Target Evaluasi SIOPTIMA";
       message =
-        `*SIOPTIMA ALERT - Evaluasi Akhir Pekan*\n\n` +
-        `Yth. Bapak/Ibu,\n\n` +
-        `Sistem mendeteksi bahwa *Realisasi Total Opsen* saat ini belum memenuhi ambang batas *Pro-Rata* yang diharapkan hingga hari ini.\n\n` +
+        `⛔*Peringatan SIOPTIMA - Capaian Realisasi Opsen*⛔\n\n` +
+        `Yth. Bapak dan Ibu yang berwenang dalam pemungutan opsen pajak daerah,\n\n` +
+        `Bahwa sistem mendeteksi capaian *Realisasi Total Opsen* saat ini belum memenuhi ambang batas *Pro-Rata* yang diharapkan hingga hari ini.\n\n` +
         `- *Ekspektasi Pro-Rata (Hari ke-${dayOfYear})*: ${formatRp(expectedRealisasi)}\n` +
         `- *Realisasi Aktual*: ${formatRp(realisasiTotal)}\n` +
         `- *Selisih/Kekurangan*: ${formatRp(expectedRealisasi - realisasiTotal)}\n\n` +
-        `Mohon segera ditindaklanjuti untuk strategi minggu depan.\n\n` +
+        `Mohon segera ditindaklanjuti dengan opsi strategi pemungutan sebagai berikut.\n\n` +
         `👉 *LIHAT REKOMENDASI TINDAKAN DI SINI:*\n` +
         `${process.env.PUBLIC_URL || "http://localhost:5000"}/rekomendasi\n\nTerima kasih.`;
     } else {
-      console.log("[CRON] Evaluasi aman, target terpenuhi. Mengirim notifikasi selamat.");
       emailSubject = "Laporan Evaluasi SIOPTIMA - Target Aman";
-      message = 
-        `*SIOPTIMA REPORT - Evaluasi Akhir Pekan*\n\n` +
-        `Yth. Bapak/Ibu,\n\n` +
-        `Selamat! Sistem mendeteksi bahwa *Realisasi Total Opsen* saat ini dalam kondisi AMAN dan telah memenuhi ambang batas *Pro-Rata* yang diharapkan hingga hari ini.\n\n` +
+      message =
+        `✅*Laporan SIOPTIMA - Capaian Realisasi Opsen*✅\n\n` +
+        `Yth. Bapak dan Ibu yang berwenang dalam pemungutan opsen pajak daerah,\n\n` +
+        `Selamat! Bahwa sistem mendeteksi capaian *Realisasi Total Opsen* saat ini dalam kondisi AMAN dan telah memenuhi ambang batas *Pro-Rata* yang diharapkan hingga hari ini.\n\n` +
         `- *Ekspektasi Pro-Rata (Hari ke-${dayOfYear})*: ${formatRp(expectedRealisasi)}\n` +
         `- *Realisasi Aktual*: ${formatRp(realisasiTotal)}\n` +
         `- *Surplus/Kelebihan*: ${formatRp(realisasiTotal - expectedRealisasi)}\n\n` +
-        `Pertahankan kinerja baik ini untuk strategi minggu depan.\n\n` +
+        `Pertahankan kinerja baik ini dengan mempertimbangkan opsi strategi pemungutan berikut.\n\n` +
         `👉 *LIHAT REKOMENDASI TINDAKAN DI SINI:*\n` +
         `${process.env.PUBLIC_URL || "http://localhost:5000"}/rekomendasi\n\nTerima kasih.`;
     }

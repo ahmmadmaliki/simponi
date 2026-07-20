@@ -123,8 +123,8 @@ export default function DataPanen() {
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
                 <th className="p-4">No</th>
                 <th className="p-4">Kecamatan</th>
-                <th className="p-4">Tan. Padi</th>
-                <th className="p-4">Tan. Palawija</th>
+                <th className="p-4">Padi</th>
+                <th className="p-4">Palawija</th>
                 <th className="p-4">Hortikultura</th>
                 <th className="p-4">Tebu</th>
                 <th className="p-4">Keterangan</th>
@@ -136,25 +136,31 @@ export default function DataPanen() {
               ) : filteredData.length === 0 ? (
                 <tr><td colSpan="7" className="p-8 text-center text-slate-500">Data tidak ditemukan.</td></tr>
               ) : (
-                currentItems.map((item, index) => (
-                  <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="p-4 text-slate-500">{indexOfFirstItem + index + 1}</td>
-                    <td className="p-4 font-bold text-slate-800">{item.kecamatan}</td>
-                    <td className="p-4 text-slate-600">
-                      <span className={item.padi !== '0' ? 'font-medium text-emerald-600' : 'text-slate-400'}>{item.padi !== '0' ? item.padi : '-'}</span>
-                    </td>
-                    <td className="p-4 text-slate-600">
-                      <span className={item.palawija !== '0' ? 'font-medium text-amber-600' : 'text-slate-400'}>{item.palawija !== '0' ? item.palawija : '-'}</span>
-                    </td>
-                    <td className="p-4 text-slate-600">
-                      <span className={item.hortikultura !== '0' ? 'font-medium text-green-600' : 'text-slate-400'}>{item.hortikultura !== '0' ? item.hortikultura : '-'}</span>
-                    </td>
-                    <td className="p-4 text-slate-600">
-                      <span className={item.tebu !== '0' ? 'font-medium text-purple-600' : 'text-slate-400'}>{item.tebu !== '0' ? item.tebu : '-'}</span>
-                    </td>
-                    <td className="p-4 text-slate-500 italic text-sm">{item.keterangan || '-'}</td>
-                  </tr>
-                ))
+                currentItems.map((item, index) => {
+                  const formatVal = (val) => {
+                    if (!val || val === '0') return '-';
+                    return val.replace(/januari\s*-\s*desember/i, 'Setiap Bulan');
+                  };
+                  return (
+                    <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="p-4 text-slate-500">{indexOfFirstItem + index + 1}</td>
+                      <td className="p-4 font-bold text-slate-800">{item.kecamatan}</td>
+                      <td className="p-4 text-slate-600">
+                        <span className={item.padi !== '0' ? 'font-medium text-emerald-600' : 'text-slate-400'}>{formatVal(item.padi)}</span>
+                      </td>
+                      <td className="p-4 text-slate-600">
+                        <span className={item.palawija !== '0' ? 'font-medium text-amber-600' : 'text-slate-400'}>{formatVal(item.palawija)}</span>
+                      </td>
+                      <td className="p-4 text-slate-600">
+                        <span className={item.hortikultura !== '0' ? 'font-medium text-green-600' : 'text-slate-400'}>{formatVal(item.hortikultura)}</span>
+                      </td>
+                      <td className="p-4 text-slate-600">
+                        <span className={item.tebu !== '0' ? 'font-medium text-purple-600' : 'text-slate-400'}>{formatVal(item.tebu)}</span>
+                      </td>
+                      <td className="p-4 text-slate-500 italic text-sm">{item.keterangan || '-'}</td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

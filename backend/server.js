@@ -305,8 +305,9 @@ app.get("/api/dashboard/kecamatan", async (req, res) => {
       const opsenPkb = Number(item.opsen_pkb) || 0;
       const opsenBbnkb = Number(item.opsen_bbn) || 0;
       
-      const pkbPokok = opsenPkb / 0.66;
-      const bbnkbPokok = opsenBbnkb / 0.66;
+      const opsenPercentage = Number(process.env.OPSEN_PERCENTAGE) || 0.66;
+      const pkbPokok = opsenPkb / opsenPercentage;
+      const bbnkbPokok = opsenBbnkb / opsenPercentage;
       
       return {
         id: Number(item.kode_camat),
@@ -545,7 +546,7 @@ app.get("/api/evaluasi/live-komparasi", async (req, res) => {
     const dataT1 = decodeBapendaResponse(resT1.data);
     const dataT2 = decodeBapendaResponse(resT2.data);
 
-    const result = [];
+
     const months = [
       "Januari",
       "Februari",
@@ -561,7 +562,12 @@ app.get("/api/evaluasi/live-komparasi", async (req, res) => {
       "Desember",
     ];
 
-    months.forEach((m, idx) => {
+    const kodeKota = process.env.BAPENDA_KODE_KOTA || "";
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonthIdx = today.getMonth();
+
+    const promises = months.map(async (m, idx) => {
       const monthNumStr = String(idx + 1);
 
       const filterT1 = dataT1.filter((d) => String(d.bulan) === monthNumStr);
@@ -582,12 +588,34 @@ app.get("/api/evaluasi/live-komparasi", async (req, res) => {
           sumT2 += Number(d.total_opsen_bbn_tgbayar) || 0;
       });
 
-      result.push({
+      if (idx === currentMonthIdx && (t1 === currentYear || t2 === currentYear)) {
+        const y = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, "0");
+        const dt = String(today.getDate()).padStart(2, "0");
+        const tglMulai = `${y}-${mm}-01`;
+        const tglAkhir = `${y}-${mm}-${dt}`;
+        
+        try {
+          const liveMetrics = await fetchMetricsForDateRange(tglMulai, tglAkhir, kodeKota, token);
+          let liveTotal = 0;
+          if (opsenType === "PKB" || opsenType === "TOTAL") liveTotal += liveMetrics.realisasiPkb || 0;
+          if (opsenType === "BBNKB" || opsenType === "TOTAL") liveTotal += liveMetrics.realisasiBbnkb || 0;
+
+          if (t1 === currentYear && sumT1 === 0) sumT1 = liveTotal;
+          if (t2 === currentYear && sumT2 === 0) sumT2 = liveTotal;
+        } catch (err) {
+          console.error("Failed to fetch live partial metrics:", err.message);
+        }
+      }
+
+      return {
         name: m,
         [t1]: sumT1,
         [t2]: sumT2,
-      });
+      };
     });
+
+    const result = await Promise.all(promises);
 
     res.json(result);
   } catch (error) {
@@ -618,12 +646,21 @@ app.post("/api/upload/panen", upload.single("file"), async (req, res) => {
     for (const row of data) {
       if (!row.Kecamatan) continue;
 
+      const normalizeVal = (val) => {
+        if (!val) return "0";
+        const v = val.toString().trim();
+        if (v.toLowerCase().replace(/\s/g, "") === "januari-desember") {
+          return "Setiap Bulan";
+        }
+        return v;
+      };
+
       const rowData = {
-        kecamatan: row.Kecamatan.toString(),
-        padi: row["Tan. Padi"]?.toString() || "0",
-        palawija: row["Tanaman Palawija"]?.toString() || "0",
-        hortikultura: row["Tanaman Hortikultura"]?.toString() || "0",
-        tebu: row["Tanaman Tebu"]?.toString() || "0",
+        kecamatan: row.Kecamatan?.toString().trim() || "",
+        padi: normalizeVal(row["Padi"] || row["Tan. Padi"] || row["Tanaman Padi"]),
+        palawija: normalizeVal(row["Palawija"] || row["Tan. Palawija"] || row["Tanaman Palawija"]),
+        hortikultura: normalizeVal(row["Hortikultura"] || row["Tan. Hortikultura"] || row["Tanaman Hortikultura"]),
+        tebu: normalizeVal(row["Tebu"] || row["Tan. Tebu"] || row["Tanaman Tebu"]),
         keterangan: row.Keterangan?.toString() || "",
       };
 
@@ -850,10 +887,10 @@ app.get("/api/template/panen", (req, res) =>
   createTemplate(res, "Template_Panen", [
     "No",
     "Kecamatan",
-    "Tan. Padi",
-    "Tanaman Palawija",
-    "Tanaman Hortikultura",
-    "Tanaman Tebu",
+    "Padi",
+    "Palawija",
+    "Hortikultura",
+    "Tebu",
     "Keterangan",
   ])
 );
@@ -912,8 +949,12 @@ app.get("/api/test-notification", async (req, res) => {
 // --- REKOMENDASI TINDAKAN API ---
 app.get("/api/rekomendasi", async (req, res) => {
   try {
+    const { bulan } = req.query;
     const jadwalPanenList = await prisma.jadwalPanen.findMany();
-    const currentMonthIndex = new Date().getMonth(); // 0-11
+    
+    // Jika bulan tidak dikirim, gunakan bulan saat ini
+    const currentMonthIndex = bulan !== undefined ? Number(bulan) : new Date().getMonth(); // 0-11
+    
     const months = [
       "januari", "pebruari", "maret", "april", "mei", "juni", 
       "juli", "agustus", "september", "oktober", "nopember", "desember"
@@ -926,6 +967,9 @@ app.get("/api/rekomendasi", async (req, res) => {
     const isHarvestingNow = (scheduleStr) => {
       if (!scheduleStr || scheduleStr === "0") return false;
       const str = scheduleStr.toLowerCase();
+      
+      // Cek apakah sepanjang tahun
+      if (str.includes("setiap bulan") || str.includes("tiap bulan")) return true;
       
       // Cek exact match atau comma separated
       if (str.includes(currentMonthStr) || str.includes(currentMonthAlternate)) return true;
@@ -994,27 +1038,28 @@ app.get("/api/rekomendasi", async (req, res) => {
       let priorityText = "";
 
       const ONE_BILLION = 1000000000;
+      const HALF_BILLION = 500000000;
 
       if (hasHarvest && tunggakanData?.potensi > ONE_BILLION) {
         priorityLevel = 1;
         priorityText = "Prioritas Utama";
         tipe = "Operasi Gabungan";
-        alasan = `Wilayah ini sedang memasuki masa panen raya (${activeCommodities.join(", ")}). Daya beli masyarakat sedang tinggi, sangat ideal untuk penagihan aktif (Operasi Gabungan/Door-to-door) mengingat potensi tunggakan mencapai ${potensiStr} dari ${obyekCount.toLocaleString('id-ID')} obyek kendaraan.`;
-      } else if (hasHarvest && tunggakanData?.potensi <= ONE_BILLION) {
+        alasan = `Wilayah ini sedang memasuki masa panen raya (${activeCommodities?.join(", ") || ""}). Daya beli masyarakat sedang tinggi, sangat ideal untuk penagihan aktif (Operasi Gabungan/Door-to-door) mengingat potensi tunggakan mencapai ${potensiStr} dari ${obyekCount.toLocaleString('id-ID')} obyek kendaraan.`;
+      } else if (hasHarvest && tunggakanData?.potensi >= HALF_BILLION && tunggakanData?.potensi <= ONE_BILLION) {
         priorityLevel = 2;
         priorityText = "Prioritas Menengah";
         tipe = "Door-to-door";
-        alasan = `Wilayah ini sedang panen raya (${activeCommodities.join(", ")}). Potensi tunggakan sebesar ${potensiStr} (${obyekCount.toLocaleString('id-ID')} obyek) dapat dimaksimalkan melalui pendekatan persuasif (Door-to-door).`;
-      } else if (!hasHarvest && tunggakanData?.potensi > ONE_BILLION) {
-        priorityLevel = 2;
-        priorityText = "Prioritas Menengah";
-        tipe = "Sosialisasi Khusus";
-        alasan = `Meskipun belum memasuki masa panen, wilayah ini butuh perhatian khusus karena besarnya potensi tunggakan yang mencapai ${potensiStr} dari ${obyekCount.toLocaleString('id-ID')} obyek kendaraan.`;
-      } else {
+        alasan = `Wilayah ini sedang panen raya (${activeCommodities?.join(", ") || ""}). Potensi tunggakan sebesar ${potensiStr} (${obyekCount.toLocaleString('id-ID')} obyek) dapat dimaksimalkan melalui pendekatan persuasif (Door-to-door).`;
+      } else if (hasHarvest && tunggakanData?.potensi < HALF_BILLION) {
         priorityLevel = 3;
         priorityText = "Prioritas Rendah";
         tipe = "Sosialisasi Rutin";
-        alasan = `Wilayah ini belum memasuki masa panen komoditas utama dan potensi tunggakan relatif terkendali (${potensiStr}). Sosialisasi PKB/BBNKB rutin disarankan.`;
+        alasan = `Wilayah ini sedang panen raya (${activeCommodities?.join(", ") || ""}), namun potensi tunggakan relatif terkendali (${potensiStr}). Sosialisasi PKB/BBNKB rutin disarankan.`;
+      } else {
+        priorityLevel = 3;
+        priorityText = "Prioritas Rendah";
+        tipe = "Pantau Berkala";
+        alasan = `Wilayah ini belum memasuki masa panen komoditas utama. Tunggakan saat ini ${potensiStr} (${obyekCount.toLocaleString('id-ID')} obyek). Disarankan penagihan ditunda hingga masa panen tiba.`;
       }
 
       return {

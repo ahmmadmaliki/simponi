@@ -35,7 +35,11 @@ export default function MainLayout() {
       path: "/kinerja",
       icon: <Activity size={24} />,
     },
-    { name: "Evaluasi", path: "/evaluasi", icon: <BarChart2 size={24} /> },
+    {
+      name: "Analisis Capaian Opsen",
+      path: "/evaluasi",
+      icon: <BarChart2 size={24} />,
+    },
     {
       name: "Rekomendasi Tindakan",
       path: "/rekomendasi",

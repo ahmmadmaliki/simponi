@@ -1,18 +1,32 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Lightbulb, MapPin, Activity, AlertTriangle, ShieldAlert, Target } from 'lucide-react';
+import { Lightbulb, MapPin, Activity, AlertTriangle, ShieldAlert, Target, Calendar } from 'lucide-react';
+import api from '../api/axios';
 
-const fetchRekomendasi = async () => {
-  const res = await fetch('/api/rekomendasi');
-  if (!res.ok) throw new Error('Gagal mengambil data rekomendasi');
-  return res.json();
+const fetchRekomendasi = async (bulan) => {
+  const params = bulan !== null && bulan !== "" ? `?bulan=${bulan}` : "";
+  const res = await api.get(`/rekomendasi${params}`);
+  return res.data;
 };
 
 export default function RekomendasiTindakan() {
+  const currentMonthIdx = new Date().getMonth().toString();
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthIdx);
+
   const { data: rekomendasi, isLoading, error } = useQuery({
-    queryKey: ['rekomendasi'],
-    queryFn: fetchRekomendasi
+    queryKey: ['rekomendasi', selectedMonth],
+    queryFn: () => fetchRekomendasi(selectedMonth)
   });
+
+  const displayData = React.useMemo(() => {
+    if (!rekomendasi) return [];
+    
+    const utama = rekomendasi.filter(r => r.priorityLevel === 1).slice(0, 4);
+    const menengah = rekomendasi.filter(r => r.priorityLevel === 2).slice(0, 2);
+    const rendah = rekomendasi.filter(r => r.priorityLevel === 3).slice(0, 2);
+
+    return [...utama, ...menengah, ...rendah];
+  }, [rekomendasi]);
 
   if (isLoading) return <div className="p-8 text-center text-slate-500">Memuat data rekomendasi cerdas...</div>;
   if (error) return <div className="p-8 text-center text-red-500">Error: {error.message}</div>;
@@ -25,7 +39,7 @@ export default function RekomendasiTindakan() {
           <Lightbulb size={200} />
         </div>
         <div className="relative z-10 max-w-2xl">
-          <h1 className="text-3xl font-bold mb-4 flex items-center gap-3">
+          <h1 className="text-3xl font-bold text-amber-400 mb-4 flex items-center gap-3">
             <Target className="text-primary-200" size={32} />
             Rekomendasi Tindakan Proaktif
           </h1>
@@ -38,9 +52,39 @@ export default function RekomendasiTindakan() {
         </div>
       </div>
 
+      {/* Filter Section */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4">
+        <div className="bg-primary-50 p-3 rounded-xl">
+          <Calendar className="text-primary-600" size={24} />
+        </div>
+        <div className="flex-1 max-w-sm">
+          <label className="block text-sm font-bold text-slate-700 mb-1">
+            Simulasi Rekomendasi Bulan
+          </label>
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+            className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-lg bg-slate-50 focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-bold text-slate-800 transition-all"
+          >
+            <option value="0">Januari</option>
+            <option value="1">Februari</option>
+            <option value="2">Maret</option>
+            <option value="3">April</option>
+            <option value="4">Mei</option>
+            <option value="5">Juni</option>
+            <option value="6">Juli</option>
+            <option value="7">Agustus</option>
+            <option value="8">September</option>
+            <option value="9">Oktober</option>
+            <option value="10">November</option>
+            <option value="11">Desember</option>
+          </select>
+        </div>
+      </div>
+
       {/* Cards Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {rekomendasi?.map((item) => {
+        {displayData.map((item) => {
           const isUtama = item.priorityLevel === 1;
           const isMenengah = item.priorityLevel === 2;
           
