@@ -479,6 +479,11 @@ export default function Dashboard() {
 
                     return [formattedValue, name];
                   }}
+                  itemSorter={(item) => {
+                    if (item.name === "Opsen PKB") return -1;
+                    if (item.name === "Opsen BBNKB") return 0;
+                    return 1;
+                  }}
                   contentStyle={{
                     borderRadius: "12px",
                     fontSize: "18px",
@@ -537,9 +542,9 @@ export default function Dashboard() {
             )}
           </div>
 
-          <div className="overflow-x-auto border border-slate-100 rounded-xl relative shadow-inner">
+          <div className="overflow-x-auto max-h-[500px] overflow-y-auto border border-slate-100 rounded-xl relative shadow-inner">
             <table className="w-full text-left">
-              <thead className="bg-slate-50 border-b-2 border-slate-200">
+              <thead className="sticky top-0 bg-slate-50 z-10 shadow-sm border-b-2 border-slate-200">
                 <tr>
                   <th className="p-4 text-base font-bold text-slate-700 bg-slate-50 whitespace-nowrap">
                     Kecamatan
@@ -624,8 +629,8 @@ export default function Dashboard() {
                   })
                 )}
               </tbody>
-              {kecamatanData.length > 0 && !loadingKec && (
-                <tfoot className="bg-slate-100 border-t-2 border-slate-300">
+                {kecamatanData.length > 0 && !loadingKec && (
+                  <tfoot className="sticky bottom-0 bg-slate-100 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] border-t-2 border-slate-300">
                   <tr>
                     <th className="p-4 text-base font-extrabold text-slate-800 bg-slate-100 whitespace-nowrap uppercase tracking-wider">
                       TOTAL KESELURUHAN

@@ -1019,10 +1019,11 @@ app.get("/api/test-notification", async (req, res) => {
 });
 
 // --- REKOMENDASI TINDAKAN API ---
-app.get("/api/rekomendasi", async (req, res) => {
-  try {
-    const { bulan } = req.query;
-    const jadwalPanenList = await prisma.jadwalPanen.findMany();
+  app.get("/api/rekomendasi", async (req, res) => {
+    try {
+      const { bulan } = req.query;
+      const jadwalPanenList = await prisma.jadwalPanen.findMany();
+      const pasaranList = await prisma.pasaran.findMany();
     
     // Jika bulan tidak dikirim, gunakan bulan saat ini
     const currentMonthIndex = bulan !== undefined ? Number(bulan) : new Date().getMonth(); // 0-11
@@ -1112,26 +1113,30 @@ app.get("/api/rekomendasi", async (req, res) => {
       const ONE_BILLION = 1000000000;
       const HALF_BILLION = 500000000;
 
+      const matchedPasaran = pasaranList.find(p => p.namaPasar.toLowerCase().includes(panen.kecamatan.toLowerCase()));
+      const pasaranText = matchedPasaran ? ` dan terdapat pasaran hewan ${matchedPasaran.hariPasaran}` : "";
+
       if (hasHarvest && tunggakanData?.potensi > ONE_BILLION) {
         priorityLevel = 1;
         priorityText = "Prioritas Utama";
         tipe = "Operasi Gabungan";
-        alasan = `Wilayah ini sedang memasuki masa panen raya (${activeCommodities?.join(", ") || ""}). Daya beli masyarakat sedang tinggi, sangat ideal untuk penagihan aktif (Operasi Gabungan/Door-to-door) mengingat potensi tunggakan mencapai ${potensiStr} dari ${obyekCount.toLocaleString('id-ID')} obyek kendaraan.`;
+        alasan = `Wilayah ini sedang memasuki masa panen raya (${activeCommodities?.join(", ") || ""})${pasaranText}. Daya beli masyarakat sedang tinggi, sangat ideal untuk penagihan aktif (Operasi Gabungan/Door-to-door) mengingat potensi tunggakan mencapai ${potensiStr} dari ${obyekCount.toLocaleString('id-ID')} obyek kendaraan.`;
       } else if (hasHarvest && tunggakanData?.potensi >= HALF_BILLION && tunggakanData?.potensi <= ONE_BILLION) {
         priorityLevel = 2;
         priorityText = "Prioritas Menengah";
         tipe = "Door-to-door";
-        alasan = `Wilayah ini sedang panen raya (${activeCommodities?.join(", ") || ""}). Potensi tunggakan sebesar ${potensiStr} (${obyekCount.toLocaleString('id-ID')} obyek) dapat dimaksimalkan melalui pendekatan persuasif (Door-to-door).`;
+        alasan = `Wilayah ini sedang panen raya (${activeCommodities?.join(", ") || ""})${pasaranText}. Potensi tunggakan sebesar ${potensiStr} (${obyekCount.toLocaleString('id-ID')} obyek) dapat dimaksimalkan melalui pendekatan persuasif (Door-to-door).`;
       } else if (hasHarvest && tunggakanData?.potensi < HALF_BILLION) {
         priorityLevel = 3;
         priorityText = "Prioritas Rendah";
         tipe = "Sosialisasi Rutin";
-        alasan = `Wilayah ini sedang panen raya (${activeCommodities?.join(", ") || ""}), namun potensi tunggakan relatif terkendali (${potensiStr}). Sosialisasi PKB/BBNKB rutin disarankan.`;
+        alasan = `Wilayah ini sedang panen raya (${activeCommodities?.join(", ") || ""})${pasaranText}, namun potensi tunggakan relatif terkendali (${potensiStr}). Sosialisasi PKB/BBNKB rutin disarankan.`;
       } else {
         priorityLevel = 3;
         priorityText = "Prioritas Rendah";
         tipe = "Pantau Berkala";
-        alasan = `Wilayah ini belum memasuki masa panen komoditas utama. Tunggakan saat ini ${potensiStr} (${obyekCount.toLocaleString('id-ID')} obyek). Disarankan penagihan ditunda hingga masa panen tiba.`;
+        const pasaranNoHarvestText = matchedPasaran ? ` Meskipun terdapat aktivitas pasaran hewan ${matchedPasaran.hariPasaran}, t` : " T";
+        alasan = `Wilayah ini belum memasuki masa panen komoditas utama.${pasaranNoHarvestText}unggakan saat ini ${potensiStr} (${obyekCount.toLocaleString('id-ID')} obyek). Disarankan penagihan ditunda hingga masa panen tiba.`;
       }
 
       return {
