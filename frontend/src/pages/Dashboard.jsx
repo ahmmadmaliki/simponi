@@ -210,7 +210,6 @@ export default function Dashboard() {
             >
               <option value="2025">2025</option>
               <option value="2026">2026</option>
-              <option value="2027">2027</option>
             </select>
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <select
@@ -285,7 +284,7 @@ export default function Dashboard() {
               ) : (
                 pkbPercent.toFixed(1)
               )}
-              % dari{" "}
+              % dari Target{" "}
               {loadingMetrics ? (
                 <LoadingSpinner size={16} className="inline-flex" />
               ) : (
@@ -330,7 +329,7 @@ export default function Dashboard() {
               ) : (
                 bbnkbPercent.toFixed(1)
               )}
-              % dari{" "}
+              % dari Target{" "}
               {loadingMetrics ? (
                 <LoadingSpinner size={16} className="inline-flex" />
               ) : (
@@ -375,7 +374,7 @@ export default function Dashboard() {
               ) : (
                 totalPercent.toFixed(1)
               )}
-              % dari{" "}
+              % dari Target{" "}
               {loadingMetrics ? (
                 <LoadingSpinner size={16} className="inline-flex" />
               ) : (
@@ -392,7 +391,7 @@ export default function Dashboard() {
                 className="text-primary-200 font-bold text-lg xl:text-xl uppercase tracking-wider truncate"
                 title="Estimasi Sisa Target Keseluruhan"
               >
-                Sisa Target Total
+                Sisa Target yang Harus Dicapai
               </p>
               <h3 className="text-4xl xl:text-4xl font-black mt-3 text-yellow-400 drop-shadow-md truncate">
                 {loadingMetrics ? (
@@ -422,14 +421,16 @@ export default function Dashboard() {
         <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
           <h3 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-3">
             <TrendingUp className="text-primary-600" size={28} />
-            Tingkat Realisasi (Dalam Juta Rupiah)
+            Tingkat Realisasi Opsen (Dalam Miliar)
           </h3>
           <div className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart
                 data={(trendData || []).map((d) => ({
                   ...d,
-                  totalOpsen: (d.pkb || 0) + (d.bbnkb || 0),
+                  pkb: (d.pkb || 0) / 1000,
+                  bbnkb: (d.bbnkb || 0) / 1000,
+                  totalOpsen: ((d.pkb || 0) + (d.bbnkb || 0)) / 1000,
                 }))}
               >
                 <CartesianGrid
@@ -456,12 +457,28 @@ export default function Dashboard() {
                   dx={-10}
                 />
                 <Tooltip
-                  formatter={(value, name) => [
-                    new Intl.NumberFormat("id-ID", {
-                      maximumFractionDigits: 1,
-                    }).format(value),
-                    name,
-                  ]}
+                  formatter={(value, name) => {
+                    const formattedValue = new Intl.NumberFormat("id-ID", {
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 2,
+                    }).format(value);
+
+                    let percentage = 0;
+                    const valueInRp = value * 1000000000;
+
+                    if (name === "Opsen PKB" && targetPkb > 0) {
+                      percentage = Math.round((valueInRp / targetPkb) * 100);
+                      return [`${formattedValue} (${percentage}%)`, name];
+                    } else if (name === "Opsen BBNKB" && targetBbnkb > 0) {
+                      percentage = Math.round((valueInRp / targetBbnkb) * 100);
+                      return [`${formattedValue} (${percentage}%)`, name];
+                    } else if (name === "Total Opsen" && targetTotal > 0) {
+                      percentage = Math.round((valueInRp / targetTotal) * 100);
+                      return [`${formattedValue} (${percentage}%)`, name];
+                    }
+
+                    return [formattedValue, name];
+                  }}
                   contentStyle={{
                     borderRadius: "12px",
                     fontSize: "18px",
@@ -520,9 +537,9 @@ export default function Dashboard() {
             )}
           </div>
 
-          <div className="overflow-x-auto max-h-[500px] overflow-y-auto border border-slate-100 rounded-xl relative shadow-inner">
+          <div className="overflow-x-auto border border-slate-100 rounded-xl relative shadow-inner">
             <table className="w-full text-left">
-              <thead className="sticky top-0 bg-slate-50 z-10 shadow-sm border-b-2 border-slate-200">
+              <thead className="bg-slate-50 border-b-2 border-slate-200">
                 <tr>
                   <th className="p-4 text-base font-bold text-slate-700 bg-slate-50 whitespace-nowrap">
                     Kecamatan
@@ -573,25 +590,25 @@ export default function Dashboard() {
                         key={item.id}
                         className="hover:bg-primary-50 transition-colors"
                       >
-                        <td className="p-4 text-lg font-bold text-slate-800 whitespace-nowrap">
+                        <td className="px-4 py-2.5 text-lg font-bold text-slate-800 whitespace-nowrap">
                           {item.name}
                         </td>
-                        <td className="p-4 text-base text-slate-600 whitespace-nowrap">
+                        <td className="px-4 py-2.5 text-base text-slate-600 whitespace-nowrap">
                           {formatRupiah(item.pkbPokok)}
                         </td>
-                        <td className="p-4 text-base text-primary-700 font-semibold whitespace-nowrap">
+                        <td className="px-4 py-2.5 text-base text-primary-700 font-semibold whitespace-nowrap">
                           {formatRupiah(item.opsenPkb)}
                         </td>
-                        <td className="p-4 text-base text-slate-600 whitespace-nowrap">
+                        <td className="px-4 py-2.5 text-base text-slate-600 whitespace-nowrap">
                           {formatRupiah(item.bbnkbPokok)}
                         </td>
-                        <td className="p-4 text-base text-green-700 font-semibold whitespace-nowrap">
+                        <td className="px-4 py-2.5 text-base text-green-700 font-semibold whitespace-nowrap">
                           {formatRupiah(item.opsenBbnkb)}
                         </td>
-                        <td className="p-4 text-base font-bold text-slate-800 whitespace-nowrap">
+                        <td className="px-4 py-2.5 text-base font-bold text-slate-800 whitespace-nowrap">
                           {formatRupiah(totalRealisasiOpsen)}
                         </td>
-                        <td className="p-4 whitespace-nowrap">
+                        <td className="px-4 py-2.5 whitespace-nowrap">
                           <span
                             className={`inline-flex items-center px-4 py-1.5 rounded-full text-sm font-bold ${
                               percent >= 100
@@ -608,7 +625,7 @@ export default function Dashboard() {
                 )}
               </tbody>
               {kecamatanData.length > 0 && !loadingKec && (
-                <tfoot className="sticky bottom-0 bg-slate-100 z-10 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] border-t-2 border-slate-300">
+                <tfoot className="bg-slate-100 border-t-2 border-slate-300">
                   <tr>
                     <th className="p-4 text-base font-extrabold text-slate-800 bg-slate-100 whitespace-nowrap uppercase tracking-wider">
                       TOTAL KESELURUHAN

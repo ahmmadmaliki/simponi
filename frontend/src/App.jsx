@@ -12,6 +12,7 @@ import DataTunggakan from './pages/MasterData/DataTunggakan';
 import DataTarget from './pages/MasterData/DataTarget';
 import DataRealisasi from './pages/MasterData/DataRealisasi';
 import DataKinerja from './pages/MasterData/DataKinerja';
+import DataPasaran from './pages/MasterData/DataPasaran';
 
 // Simple mock auth guard
 const ProtectedRoute = ({ children }) => {
@@ -47,6 +48,7 @@ function App() {
           <Route path="master/target" element={<AdminRoute><DataTarget /></AdminRoute>} />
           <Route path="master/realisasi" element={<AdminRoute><DataRealisasi /></AdminRoute>} />
           <Route path="master/kinerja" element={<AdminRoute><DataKinerja /></AdminRoute>} />
+          <Route path="master/pasaran" element={<AdminRoute><DataPasaran /></AdminRoute>} />
         </Route>
       </Routes>
     </Router>

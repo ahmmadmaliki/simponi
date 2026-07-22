@@ -87,7 +87,8 @@ export default function Evaluasi() {
           Evaluasi & Analisis Komparatif (YoY)
         </h2>
         <p className="text-slate-500 mt-2 text-xl">
-          Perbandingan capaian penerimaan opsen tahun ini dan sebelumnya.
+          Perbandingan capaian penerimaan opsen tahun ini dengan tahun
+          sebelumnya.
         </p>
       </div>
 
@@ -159,59 +160,74 @@ export default function Evaluasi() {
         </div>
 
         <div className="h-[450px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={comparisonData || []}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-            >
-              <CartesianGrid
-                strokeDasharray="3 3"
-                vertical={false}
-                stroke="#e2e8f0"
-              />
-              <XAxis
-                dataKey="name"
-                tick={{ fontSize: 16, fontWeight: "bold" }}
-                tickLine={false}
-                axisLine={false}
-                dy={15}
-              />
-              <YAxis
-                width={110}
-                tickFormatter={(value) => new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(value)}
-                tick={{ fontSize: 16 }}
-                tickLine={false}
-                axisLine={false}
-                dx={-10}
-              />
-              <Tooltip
-                formatter={(value) =>
-                  `Rp ${Number(value).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 1 })}`
-                }
-                contentStyle={{
-                  borderRadius: "12px",
-                  fontSize: "18px",
-                  fontWeight: "bold",
-                }}
-                cursor={{ fill: "#f1f5f9" }}
-              />
-              <Legend wrapperStyle={{ fontSize: "18px", paddingTop: "20px" }} />
-              <Bar
-                dataKey={tahun2}
-                name={`Realisasi ${tahun2}`}
-                fill="#10b981"
-                radius={[6, 6, 0, 0]}
-                maxBarSize={60}
-              />
-              <Bar
-                dataKey={tahun1}
-                name={`Realisasi ${tahun1}`}
-                fill="#e11d48"
-                radius={[6, 6, 0, 0]}
-                maxBarSize={60}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          {isLoading ? (
+            <div className="w-full h-full flex flex-col items-center justify-center space-y-4">
+              <div className="w-12 h-12 border-4 border-slate-200 border-t-primary-600 rounded-full animate-spin"></div>
+              <p className="text-slate-500 font-bold text-lg animate-pulse">
+                Memuat Analisis Data...
+              </p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={comparisonData || []}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="#e2e8f0"
+                />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: 16, fontWeight: "bold" }}
+                  tickLine={false}
+                  axisLine={false}
+                  dy={15}
+                />
+                <YAxis
+                  width={110}
+                  tickFormatter={(value) =>
+                    new Intl.NumberFormat("id-ID", {
+                      maximumFractionDigits: 0,
+                    }).format(value)
+                  }
+                  tick={{ fontSize: 16 }}
+                  tickLine={false}
+                  axisLine={false}
+                  dx={-10}
+                />
+                <Tooltip
+                  formatter={(value) =>
+                    `Rp ${Number(value).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 1 })}`
+                  }
+                  contentStyle={{
+                    borderRadius: "12px",
+                    fontSize: "18px",
+                    fontWeight: "bold",
+                  }}
+                  cursor={{ fill: "#f1f5f9" }}
+                />
+                <Legend
+                  wrapperStyle={{ fontSize: "18px", paddingTop: "20px" }}
+                />
+                <Bar
+                  dataKey={tahun2}
+                  name={`Realisasi ${tahun2}`}
+                  fill="#10b981"
+                  radius={[6, 6, 0, 0]}
+                  maxBarSize={60}
+                />
+                <Bar
+                  dataKey={tahun1}
+                  name={`Realisasi ${tahun1}`}
+                  fill="#e11d48"
+                  radius={[6, 6, 0, 0]}
+                  maxBarSize={60}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
 
@@ -221,91 +237,123 @@ export default function Evaluasi() {
           Perbandingan Realisasi Opsen (Growth Percentage)
         </h3>
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-slate-50 border-b-2 border-slate-200">
-                <th className="p-5 text-xl font-bold text-slate-700">
-                  Periode
-                </th>
-                <th className="p-5 text-xl font-bold text-slate-700">
-                  Realisasi {tahun2}
-                </th>
-                <th className="p-5 text-xl font-bold text-slate-700">
-                  Realisasi {tahun1}
-                </th>
-                <th className="p-5 text-xl font-bold text-slate-700">
-                  Pertumbuhan (%)
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {(comparisonData || []).map((item, idx) => {
-                const monthsFullName = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-                const itemMonthIndex = monthsFullName.indexOf(item.name);
-                const currentMonthIdx = new Date().getMonth();
-                const currentYear = new Date().getFullYear();
-                
-                const isFutureMonth = Number(tahun1) > currentYear || (Number(tahun1) === currentYear && itemMonthIndex > currentMonthIdx);
-                const isCurrentMonth = Number(tahun1) === currentYear && itemMonthIndex === currentMonthIdx;
+          {isLoading ? (
+            <div className="w-full py-20 flex flex-col items-center justify-center space-y-4">
+              <div className="w-12 h-12 border-4 border-slate-200 border-t-primary-600 rounded-full animate-spin"></div>
+              <p className="text-slate-500 font-bold text-lg animate-pulse">
+                Menghitung Rincian Pertumbuhan...
+              </p>
+            </div>
+          ) : (
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-slate-50 border-b-2 border-slate-200">
+                  <th className="p-5 text-xl font-bold text-slate-700">
+                    Periode
+                  </th>
+                  <th className="p-5 text-xl font-bold text-slate-700">
+                    Realisasi {tahun2}
+                  </th>
+                  <th className="p-5 text-xl font-bold text-slate-700">
+                    Realisasi {tahun1}
+                  </th>
+                  <th className="p-5 text-xl font-bold text-slate-700">
+                    Pertumbuhan (%)
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {(comparisonData || []).map((item, idx) => {
+                  const monthsFullName = [
+                    "Januari",
+                    "Februari",
+                    "Maret",
+                    "April",
+                    "Mei",
+                    "Juni",
+                    "Juli",
+                    "Agustus",
+                    "September",
+                    "Oktober",
+                    "November",
+                    "Desember",
+                  ];
+                  const itemMonthIndex = monthsFullName.indexOf(item.name);
+                  const currentMonthIdx = new Date().getMonth();
+                  const currentYear = new Date().getFullYear();
 
-                const growth =
-                  (item[tahun1] !== undefined && item[tahun1] !== null) && item[tahun2]
-                    ? (
-                        ((item[tahun1] - item[tahun2]) / item[tahun2]) *
-                        100
-                      ).toFixed(1)
-                    : null;
-                return (
-                  <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                    <td className="p-5 text-lg font-bold text-slate-800">
-                      {item.name}
-                    </td>
-                    <td className="p-5 text-lg text-slate-600 drop-shadow-sm">
-                      Rp{" "}
-                      {Number(item[tahun2]).toLocaleString("id-ID", {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 1,
-                      })}
-                    </td>
-                    <td className="p-5 text-lg font-bold text-slate-800 drop-shadow-sm">
-                      {isFutureMonth ? (
-                        <span className="text-slate-400 italic font-normal">
-                          Belum Berjalan
-                        </span>
-                      ) : (
-                        <div className="flex flex-col">
-                          <span>
-                            {`Rp ${Number(item[tahun1] || 0).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 1 })}`}
+                  const isFutureMonth =
+                    Number(tahun1) > currentYear ||
+                    (Number(tahun1) === currentYear &&
+                      itemMonthIndex > currentMonthIdx);
+                  const isCurrentMonth =
+                    Number(tahun1) === currentYear &&
+                    itemMonthIndex === currentMonthIdx;
+
+                  const growth =
+                    item[tahun1] !== undefined &&
+                    item[tahun1] !== null &&
+                    item[tahun2]
+                      ? (
+                          ((item[tahun1] - item[tahun2]) / item[tahun2]) *
+                          100
+                        ).toFixed(1)
+                      : null;
+                  return (
+                    <tr
+                      key={idx}
+                      className="hover:bg-slate-50 transition-colors"
+                    >
+                      <td className="p-5 text-lg font-bold text-slate-800">
+                        {item.name}
+                      </td>
+                      <td className="p-5 text-lg text-slate-600 drop-shadow-sm">
+                        Rp{" "}
+                        {Number(item[tahun2]).toLocaleString("id-ID", {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 1,
+                        })}
+                      </td>
+                      <td className="p-5 text-lg font-bold text-slate-800 drop-shadow-sm">
+                        {isFutureMonth ? (
+                          <span className="text-slate-400 italic font-normal">
+                            Belum Berjalan
                           </span>
-                          {isCurrentMonth && (
-                            <span className="text-xs text-orange-500 italic font-normal mt-0.5">
-                              *Sedang berjalan
+                        ) : (
+                          <div className="flex flex-col">
+                            <span>
+                              {`Rp ${Number(item[tahun1] || 0).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 1 })}`}
                             </span>
-                          )}
-                        </div>
-                      )}
-                    </td>
-                    <td className="p-5">
-                      {growth !== null ? (
-                        <span
-                          className={`inline-flex items-center px-4 py-2 rounded-lg text-lg font-bold ${
-                            growth > 0
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {growth > 0 ? "+" : ""}
-                          {growth}%
-                        </span>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                            {isCurrentMonth && (
+                              <span className="text-xs text-orange-500 italic font-normal mt-0.5">
+                                *Sedang berjalan
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                      <td className="p-5">
+                        {growth !== null ? (
+                          <span
+                            className={`inline-flex items-center px-4 py-2 rounded-lg text-lg font-bold ${
+                              growth > 0
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {growth > 0 ? "+" : ""}
+                            {growth}%
+                          </span>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>

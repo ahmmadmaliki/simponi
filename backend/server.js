@@ -796,7 +796,59 @@ app.post("/api/upload/kinerja", upload.single("file"), async (req, res) => {
   }
 });
 
-// --- DATA TARGET ---
+  // --- DATA PASARAN ---
+  app.get("/api/master/pasaran", async (req, res) => {
+    try {
+      const data = await prisma.pasaran.findMany({ orderBy: { id: "asc" } });
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ message: "Gagal mengambil data Pasaran" });
+    }
+  });
+
+  app.delete("/api/master/pasaran/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await prisma.pasaran.delete({ where: { id: Number(id) } });
+      res.json({ message: "Data berhasil dihapus" });
+    } catch (error) {
+      res.status(500).json({ message: "Gagal menghapus data" });
+    }
+  });
+
+  app.post("/api/upload/pasaran", upload.single("file"), async (req, res) => {
+    try {
+      const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
+      const data = xlsx.utils.sheet_to_json(
+        workbook.Sheets[workbook.SheetNames[0]],
+      );
+      const mapped = data.map((row) => ({
+        namaPasar: row["Nama Pasar"]?.toString() || "",
+        hariPasaran: row["Hari Buka / Pasaran"]?.toString() || "",
+      })).filter(row => row.namaPasar);
+
+      for (const row of mapped) {
+        const existing = await prisma.pasaran.findFirst({
+          where: {
+            namaPasar: row.namaPasar,
+          },
+        });
+        if (existing) {
+          await prisma.pasaran.update({
+            where: { id: existing.id },
+            data: row,
+          });
+        } else {
+          await prisma.pasaran.create({ data: row });
+        }
+      }
+      res.json({ message: "Data Pasaran berhasil diunggah" });
+    } catch (error) {
+      res.status(500).json({ message: "Gagal upload Data Pasaran" });
+    }
+  });
+
+  // --- DATA TARGET ---
 app.get("/api/target", async (req, res) => {
   const data = await prisma.targetOpsen.findMany();
   res.json(data);
@@ -934,14 +986,21 @@ app.get("/api/template/realisasi", (req, res) =>
   ]),
 );
   app.get("/api/template/kinerja", (req, res) =>
-    createTemplate(res, "Template_Kinerja_Kegiatan", [
-      "Jenis Kegiatan",
-      "Target Jumlah",
-      "Realisasi Jumlah",
-      "Target Anggaran",
-      "Realisasi Anggaran",
-      "Tahun",
-    ]),
+      createTemplate(res, "Template_Kinerja_Kegiatan", [
+        "Jenis Kegiatan",
+        "Target Jumlah",
+        "Realisasi Jumlah",
+        "Target Anggaran",
+        "Realisasi Anggaran",
+        "Tahun"
+      ]),
+    );
+
+  app.get("/api/template/pasaran", (req, res) =>
+    createTemplate(res, "Template_Pasaran", [
+      "Nama Pasar",
+      "Hari Buka / Pasaran",
+    ])
   );
 
 // Manual Trigger for Notification Testing

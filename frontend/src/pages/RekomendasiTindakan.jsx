@@ -1,7 +1,15 @@
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Lightbulb, MapPin, Activity, AlertTriangle, ShieldAlert, Target, Calendar } from 'lucide-react';
-import api from '../api/axios';
+import { useQuery } from "@tanstack/react-query";
+import {
+  Activity,
+  AlertTriangle,
+  Calendar,
+  Lightbulb,
+  ShieldAlert,
+  Store,
+  Target,
+} from "lucide-react";
+import React, { useState } from "react";
+import api from "../api/axios";
 
 const fetchRekomendasi = async (bulan) => {
   const params = bulan !== null && bulan !== "" ? `?bulan=${bulan}` : "";
@@ -13,23 +21,45 @@ export default function RekomendasiTindakan() {
   const currentMonthIdx = new Date().getMonth().toString();
   const [selectedMonth, setSelectedMonth] = useState(currentMonthIdx);
 
-  const { data: rekomendasi, isLoading, error } = useQuery({
-    queryKey: ['rekomendasi', selectedMonth],
-    queryFn: () => fetchRekomendasi(selectedMonth)
+  const {
+    data: rekomendasi,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["rekomendasi", selectedMonth],
+    queryFn: () => fetchRekomendasi(selectedMonth),
+  });
+
+  const { data: pasaranData } = useQuery({
+    queryKey: ["dataPasaran"],
+    queryFn: async () => {
+      const res = await api.get("/master/pasaran");
+      return res.data;
+    },
   });
 
   const displayData = React.useMemo(() => {
     if (!rekomendasi) return [];
-    
-    const utama = rekomendasi.filter(r => r.priorityLevel === 1).slice(0, 4);
-    const menengah = rekomendasi.filter(r => r.priorityLevel === 2).slice(0, 2);
-    const rendah = rekomendasi.filter(r => r.priorityLevel === 3).slice(0, 2);
+
+    const utama = rekomendasi.filter((r) => r.priorityLevel === 1).slice(0, 4);
+    const menengah = rekomendasi
+      .filter((r) => r.priorityLevel === 2)
+      .slice(0, 2);
+    const rendah = rekomendasi.filter((r) => r.priorityLevel === 3).slice(0, 2);
 
     return [...utama, ...menengah, ...rendah];
   }, [rekomendasi]);
 
-  if (isLoading) return <div className="p-8 text-center text-slate-500">Memuat data rekomendasi cerdas...</div>;
-  if (error) return <div className="p-8 text-center text-red-500">Error: {error.message}</div>;
+  if (isLoading)
+    return (
+      <div className="p-8 text-center text-slate-500">
+        Memuat data rekomendasi cerdas...
+      </div>
+    );
+  if (error)
+    return (
+      <div className="p-8 text-center text-red-500">Error: {error.message}</div>
+    );
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -44,10 +74,14 @@ export default function RekomendasiTindakan() {
             Rekomendasi Tindakan Proaktif
           </h1>
           <p className="text-primary-100 text-lg leading-relaxed">
-            Sistem Pendukung Keputusan (DSS) SIOPTIMA menganalisis korelasi antara 
-            <strong className="text-white mx-1">Data Masa Panen</strong> dan 
-            <strong className="text-white mx-1">Tingkat Tunggakan Kendaraan</strong> 
-            untuk menyarankan tindakan lapangan yang paling efektif di setiap kecamatan.
+            Sistem Pendukung Keputusan (DSS) SIOPTIMA menganalisis korelasi
+            antara
+            <strong className="text-white mx-1">Data Masa Panen</strong> dan
+            <strong className="text-white mx-1">
+              Tingkat Tunggakan Kendaraan
+            </strong>
+            untuk menyarankan tindakan lapangan yang paling efektif di setiap
+            kecamatan.
           </p>
         </div>
       </div>
@@ -87,60 +121,88 @@ export default function RekomendasiTindakan() {
         {displayData.map((item) => {
           const isUtama = item.priorityLevel === 1;
           const isMenengah = item.priorityLevel === 2;
-          
-          let borderColor = 'border-l-blue-500';
-          let iconBg = 'bg-blue-100 text-blue-600';
-          let badgeBg = 'bg-blue-100 text-blue-800';
-          let prioritasBadgeBg = 'bg-slate-100 text-slate-700';
+
+          let borderColor = "border-l-blue-500";
+          let iconBg = "bg-blue-100 text-blue-600";
+          let badgeBg = "bg-blue-100 text-blue-800";
+          let prioritasBadgeBg = "bg-blue-300 text-blue-700";
 
           if (isUtama) {
-            borderColor = 'border-l-red-500';
-            iconBg = 'bg-red-100 text-red-600';
-            badgeBg = 'bg-red-100 text-red-800';
-            prioritasBadgeBg = 'bg-red-600 text-white shadow-sm';
+            borderColor = "border-l-red-500";
+            iconBg = "bg-red-100 text-red-600";
+            badgeBg = "bg-red-100 text-red-800";
+            prioritasBadgeBg = "bg-red-600 text-white shadow-sm";
           } else if (isMenengah) {
-            borderColor = 'border-l-amber-500';
-            iconBg = 'bg-amber-100 text-amber-600';
-            badgeBg = 'bg-amber-100 text-amber-800';
-            prioritasBadgeBg = 'bg-amber-500 text-white shadow-sm';
+            borderColor = "border-l-amber-500";
+            iconBg = "bg-amber-100 text-amber-600";
+            badgeBg = "bg-amber-100 text-amber-800";
+            prioritasBadgeBg = "bg-amber-500 text-white shadow-sm";
           }
 
+          const matchedPasaran = pasaranData?.find((p) =>
+            p.namaPasar.toLowerCase().includes(item.kecamatan.toLowerCase()),
+          );
+
           return (
-            <div 
-              key={item.id} 
+            <div
+              key={item.id}
               className={`bg-white rounded-2xl shadow-sm border p-6 transition-all duration-300 hover:shadow-md border-l-4 ${borderColor}`}
             >
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
                   <div className={`p-3 rounded-xl ${iconBg}`}>
-                    {isUtama ? <ShieldAlert size={24} /> : <Lightbulb size={24} />}
+                    {isUtama ? (
+                      <ShieldAlert size={24} />
+                    ) : (
+                      <Lightbulb size={24} />
+                    )}
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-slate-800">{item.kecamatan}</h3>
+                    <h3 className="text-lg font-bold text-slate-800">
+                      {item.kecamatan}
+                    </h3>
                     <div className="flex gap-2 mt-1">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeBg}`}>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeBg}`}
+                      >
                         {item.tipe}
                       </span>
                     </div>
                   </div>
                 </div>
-                <div className={`px-3 py-1 rounded-full text-xs font-bold ${prioritasBadgeBg}`}>
-                  {isUtama ? '🔥 ' : ''}{item.priorityText}
+                <div
+                  className={`px-3 py-1 rounded-full text-xs font-bold ${prioritasBadgeBg}`}
+                >
+                  {isUtama ? "🔥 " : ""}
+                  {item.priorityText}
                 </div>
               </div>
 
               <p className="text-slate-600 mb-6 leading-relaxed">
                 {item.alasan}
+                {item.alasan.includes("Tebu") && (
+                  <span className="block mt-4 text-slate-500 text-sm italic">
+                    <span className="font-bold">Catatan:</span>
+                    <br />
+                    Panen Tebu tidak terlalu berdampak pada penghasilan warga
+                    lokal karena mayoritas panen dilakukan oleh pihak swasta
+                    dari luar daerah yang menyewa lahan lokal.
+                  </span>
+                )}
               </p>
 
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-slate-100">
                 <div className="flex items-center gap-3">
                   <div className="bg-emerald-50 p-2 rounded-lg">
                     <Activity className="text-emerald-500" size={18} />
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500 font-medium">Status Panen</p>
-                    <p className="text-sm font-bold text-slate-800">{item.dataPanen}</p>
+                    <p className="text-xs text-slate-500 font-medium">
+                      Status Panen
+                    </p>
+                    <p className="text-sm font-bold text-slate-800">
+                      {item.dataPanen}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -148,10 +210,29 @@ export default function RekomendasiTindakan() {
                     <AlertTriangle className="text-amber-500" size={18} />
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500 font-medium">Potensi Tunggakan</p>
-                    <p className="text-sm font-bold text-slate-800">{item.dataTunggakan}</p>
+                    <p className="text-xs text-slate-500 font-medium">
+                      Potensi Tunggakan
+                    </p>
+                    <p className="text-sm font-bold text-slate-800">
+                      {item.dataTunggakan}
+                    </p>
                   </div>
                 </div>
+                {matchedPasaran && (
+                  <div className="flex items-center gap-3">
+                    <div className="bg-blue-50 p-2 rounded-lg">
+                      <Store className="text-blue-500" size={18} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 font-medium">
+                        Jadwal Pasaran
+                      </p>
+                      <p className="text-sm font-bold text-slate-800">
+                        {matchedPasaran.hariPasaran}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           );

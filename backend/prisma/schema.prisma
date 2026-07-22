@@ -98,3 +98,10 @@ model SystemMetadata {
   value     String
   updatedAt DateTime @updatedAt
 }
+
+model Pasaran {
+  id          Int      @id @default(autoincrement())
+  namaPasar   String
+  hariPasaran String
+  createdAt   DateTime @default(now())
+}

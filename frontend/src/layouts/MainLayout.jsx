@@ -13,6 +13,7 @@ import {
   Menu,
   Target,
   Users,
+  Store,
 } from "lucide-react";
 import { useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
@@ -82,6 +83,11 @@ export default function MainLayout() {
             name: "Data Tunggakan",
             path: "/master/tunggakan",
             icon: <FileWarning size={20} />,
+          },
+          {
+            name: "Data Pasaran",
+            path: "/master/pasaran",
+            icon: <Store size={20} />,
           },
         ]
       : [];
