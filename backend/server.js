@@ -519,6 +519,24 @@ app.get("/api/evaluasi/live-komparasi", async (req, res) => {
 
     const token = await getBapendaToken();
 
+    const targetT1Data = await prisma.targetOpsen.aggregate({
+      _sum: { targetRupiah: true },
+      where: { 
+        tahun: t1,
+        ...(opsenType !== "TOTAL" && { jenisOpsen: opsenType })
+      },
+    });
+    const targetT2Data = await prisma.targetOpsen.aggregate({
+      _sum: { targetRupiah: true },
+      where: { 
+        tahun: t2,
+        ...(opsenType !== "TOTAL" && { jenisOpsen: opsenType })
+      },
+    });
+    
+    const targetT1 = Number(targetT1Data._sum.targetRupiah || 0);
+    const targetT2 = Number(targetT2Data._sum.targetRupiah || 0);
+
     // Fetch Data Tahun 1
     const resT1 = await axios.get(
       "https://simonas.dipendajatim.go.id/rest/api/v2026/opsen/total",
@@ -614,12 +632,49 @@ app.get("/api/evaluasi/live-komparasi", async (req, res) => {
         name: m,
         [t1]: sumT1,
         [t2]: sumT2,
+        targetT1,
+        targetT2,
       };
     });
 
     const result = await Promise.all(promises);
 
-    res.json(result);
+    const { periode } = req.query;
+    let finalResult = result;
+
+    if (periode === "Triwulan") {
+      finalResult = [
+        { name: "Triwulan 1", [t1]: 0, [t2]: 0, targetT1, targetT2 },
+        { name: "Triwulan 2", [t1]: 0, [t2]: 0, targetT1, targetT2 },
+        { name: "Triwulan 3", [t1]: 0, [t2]: 0, targetT1, targetT2 },
+        { name: "Triwulan 4", [t1]: 0, [t2]: 0, targetT1, targetT2 },
+      ];
+      result.forEach((m, i) => {
+        const q = Math.floor(i / 3);
+        finalResult[q][t1] += m[t1] || 0;
+        finalResult[q][t2] += m[t2] || 0;
+      });
+    } else if (periode === "Semester") {
+      finalResult = [
+        { name: "Semester 1", [t1]: 0, [t2]: 0, targetT1, targetT2 },
+        { name: "Semester 2", [t1]: 0, [t2]: 0, targetT1, targetT2 },
+      ];
+      result.forEach((m, i) => {
+        const s = Math.floor(i / 6);
+        finalResult[s][t1] += m[t1] || 0;
+        finalResult[s][t2] += m[t2] || 0;
+      });
+    } else if (periode === "Tahunan") {
+      finalResult = [
+        { name: `Total ${t1} vs ${t2}`, [t1]: 0, [t2]: 0, targetT1, targetT2 },
+      ];
+      result.forEach((m) => {
+        finalResult[0][t1] += m[t1] || 0;
+        finalResult[0][t2] += m[t2] || 0;
+      });
+    }
+
+    res.json(finalResult);
   } catch (error) {
     console.error("Error fetching live evaluasi:", error.message);
     res

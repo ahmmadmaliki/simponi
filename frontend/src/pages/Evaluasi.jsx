@@ -17,24 +17,28 @@ export default function Evaluasi() {
   const [opsenType, setOpsenType] = useState("PKB");
   const [tahun1, setTahun1] = useState("2026");
   const [tahun2, setTahun2] = useState("2025");
+  const [periode, setPeriode] = useState("Bulanan");
 
   const [inputOpsenType, setInputOpsenType] = useState("PKB");
   const [inputTahun1, setInputTahun1] = useState("2026");
   const [inputTahun2, setInputTahun2] = useState("2025");
+  const [inputPeriode, setInputPeriode] = useState("Bulanan");
 
   const handleApplyFilter = () => {
     setOpsenType(inputOpsenType);
     setTahun1(inputTahun1);
     setTahun2(inputTahun2);
+    setPeriode(inputPeriode);
   };
 
   const { data: comparisonData, isLoading } = useQuery({
-    queryKey: ["evaluasiKomparasi", tahun1, tahun2, opsenType],
+    queryKey: ["evaluasiKomparasi", tahun1, tahun2, opsenType, periode],
     queryFn: async () => {
       const params = new URLSearchParams({
         tahun1,
         tahun2,
         opsenType,
+        periode,
       }).toString();
       const res = await api.get(`/evaluasi/live-komparasi?${params}`);
       return res.data;
@@ -132,6 +136,21 @@ export default function Evaluasi() {
             </select>
           </div>
         </div>
+        <div className="flex-1 w-full">
+          <label className="block text-lg font-bold text-primary-900 mb-2">
+            Periode
+          </label>
+          <select
+            value={inputPeriode}
+            onChange={(e) => setInputPeriode(e.target.value)}
+            className="w-full pl-5 pr-10 py-4 rounded-xl border border-slate-300 text-lg bg-white shadow-sm focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 font-bold text-slate-800"
+          >
+            <option value="Bulanan">Bulanan</option>
+            <option value="Triwulan">Triwulan</option>
+            <option value="Semester">Semester</option>
+            <option value="Tahunan">Tahunan</option>
+          </select>
+        </div>
         <div className="w-full lg:w-auto">
           <button
             onClick={handleApplyFilter}
@@ -202,9 +221,20 @@ export default function Evaluasi() {
                   dx={-10}
                 />
                 <Tooltip
-                  formatter={(value) =>
-                    `Rp ${Number(value).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 1 })}`
-                  }
+                  formatter={(value, name, props) => {
+                    const formattedValue = `Rp ${Number(value).toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 1 })}`;
+                    
+                    let percentageText = "";
+                    if (name === `Realisasi ${tahun1}` && props.payload.targetT1 > 0) {
+                       const pct = ((Number(value) / props.payload.targetT1) * 100).toFixed(1);
+                       percentageText = ` (${pct}%)`;
+                    } else if (name === `Realisasi ${tahun2}` && props.payload.targetT2 > 0) {
+                       const pct = ((Number(value) / props.payload.targetT2) * 100).toFixed(1);
+                       percentageText = ` (${pct}%)`;
+                    }
+                    
+                    return [formattedValue + percentageText, name];
+                  }}
                   contentStyle={{
                     borderRadius: "12px",
                     fontSize: "18px",
@@ -286,13 +316,17 @@ export default function Evaluasi() {
                   const currentMonthIdx = new Date().getMonth();
                   const currentYear = new Date().getFullYear();
 
-                  const isFutureMonth =
-                    Number(tahun1) > currentYear ||
-                    (Number(tahun1) === currentYear &&
-                      itemMonthIndex > currentMonthIdx);
+                  const isFutureMonth = 
+                    periode === "Bulanan" && (
+                      Number(tahun1) > currentYear ||
+                      (Number(tahun1) === currentYear &&
+                        itemMonthIndex > currentMonthIdx)
+                    );
                   const isCurrentMonth =
-                    Number(tahun1) === currentYear &&
-                    itemMonthIndex === currentMonthIdx;
+                    periode === "Bulanan" && (
+                      Number(tahun1) === currentYear &&
+                      itemMonthIndex === currentMonthIdx
+                    );
 
                   const growth =
                     item[tahun1] !== undefined &&
