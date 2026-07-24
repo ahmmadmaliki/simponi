@@ -148,7 +148,11 @@ export default function Evaluasi() {
         <div className="flex justify-between items-center mb-8">
           <h3 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
             <CalendarIcon className="text-primary-600" size={28} />
-            Komparasi {opsenType} (Dalam Juta Rupiah)
+            Komparasi{" "}
+            {opsenType === "TOTAL"
+              ? "Total Keseluruhan"
+              : `Opsen ${opsenType}`}{" "}
+            {tahun1} vs {tahun2}
           </h3>
           <button
             onClick={handleDownloadExcel}

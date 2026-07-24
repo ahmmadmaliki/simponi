@@ -143,6 +143,7 @@ export default function Dashboard() {
     targetTotal > 0 ? ((realisasiPkb + realisasiBbnkb) / targetTotal) * 100 : 0;
 
   const sisaTarget = targetTotal - (realisasiPkb + realisasiBbnkb);
+  const sisaPercent = targetTotal > 0 ? (Math.max(sisaTarget, 0) / targetTotal) * 100 : 0;
 
   const handleDownloadExcel = () => {
     if (!kecamatanData || kecamatanData.length === 0) return;
@@ -253,7 +254,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-start">
             <div className="min-w-0 pr-4">
               <p
-                className="text-slate-500 font-bold text-lg xl:text-xl uppercase tracking-wider truncate"
+                className="text-slate-500 font-bold text-lg xl:text-xl uppercase tracking-wider"
                 title="Target Opsen PKB"
               >
                 Realisasi Opsen PKB
@@ -298,7 +299,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-start">
             <div className="min-w-0 pr-4">
               <p
-                className="text-slate-500 font-bold text-lg xl:text-xl uppercase tracking-wider truncate"
+                className="text-slate-500 font-bold text-lg xl:text-xl uppercase tracking-wider"
                 title="Target Opsen BBNKB"
               >
                 Realisasi Opsen BBNKB
@@ -343,7 +344,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-start">
             <div className="min-w-0 pr-4">
               <p
-                className="text-slate-500 font-bold text-lg xl:text-xl uppercase tracking-wider truncate"
+                className="text-slate-500 font-bold text-lg xl:text-xl uppercase tracking-wider"
                 title="Target Total Opsen"
               >
                 Realisasi Total
@@ -388,7 +389,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-start">
             <div className="min-w-0 pr-4">
               <p
-                className="text-primary-200 font-bold text-lg xl:text-xl uppercase tracking-wider truncate"
+                className="text-primary-200 font-bold text-lg xl:text-xl uppercase tracking-wider"
                 title="Estimasi Sisa Target Keseluruhan"
               >
                 Sisa Target yang Harus Dicapai
@@ -409,8 +410,12 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="mt-6">
-            <p className="text-lg font-medium text-primary-100 truncate">
-              Evaluasi akhir tahun
+            <p className="text-lg font-medium text-primary-100">
+              {loadingMetrics ? (
+                "Evaluasi akhir tahun..."
+              ) : (
+                `Kekurangan: ${sisaPercent.toFixed(1)}% dari Target Rp ${formatRupiah(targetTotal).replace('Rp ', '')}`
+              )}
             </p>
           </div>
         </div>

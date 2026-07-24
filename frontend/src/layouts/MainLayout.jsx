@@ -4,16 +4,15 @@ import {
   ChevronDown,
   ChevronRight,
   Database,
-  FileSpreadsheet,
   FileWarning,
   LayoutDashboard,
   Lightbulb,
   LogOut,
   Map,
   Menu,
-  Target,
-  Users,
   Store,
+  Target,
+  Users
 } from "lucide-react";
 import { useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
@@ -64,11 +63,11 @@ export default function MainLayout() {
             path: "/master/target",
             icon: <Target size={20} />,
           },
-          {
-            name: "Data Realisasi Opsen",
-            path: "/master/realisasi",
-            icon: <FileSpreadsheet size={20} />,
-          },
+          // {
+          //   name: "Data Realisasi Opsen",
+          //   path: "/master/realisasi",
+          //   icon: <FileSpreadsheet size={20} />,
+          // },
           {
             name: "Data Kinerja Kegiatan",
             path: "/master/kinerja",
