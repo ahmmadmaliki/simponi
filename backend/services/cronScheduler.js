@@ -5,7 +5,7 @@ import { sendEmailAlert, sendWhatsAppAlert } from "./notificationService.js";
 
 const prisma = new PrismaClient();
 
-const evaluateTargets = async () => {
+const evaluateTargets = async (forceStatus = null) => {
   console.log("[CRON] Mengevaluasi target capaian...");
   try {
     const currentYear = new Date().getFullYear();
@@ -69,24 +69,35 @@ const evaluateTargets = async () => {
     let message = "";
     let emailSubject = "";
 
-    if (realisasiTotal < expectedRealisasi) {
+    let isTargetAman = false;
+
+    if (forceStatus === "aman") {
+      isTargetAman = true;
+    } else if (forceStatus === "peringatan") {
+      isTargetAman = false;
+    } else {
+      isTargetAman = realisasiTotal >= expectedRealisasi;
+    }
+
+    if (!isTargetAman) {
       emailSubject = "Peringatan Target Evaluasi SIOPTIMA";
       message =
-        `⛔*Peringatan SIOPTIMA - Capaian Realisasi Opsen*⛔\n\n` +
+        `⚠️*Peringatan SIOPTIMA - Capaian Realisasi Opsen*\n\n` +
         `Yth. Bapak dan Ibu yang berwenang dalam pemungutan opsen pajak daerah,\n\n` +
         `Bahwa sistem mendeteksi capaian *Realisasi Total Opsen* saat ini belum memenuhi ambang batas *Pro-Rata* yang diharapkan hingga hari ini.\n\n` +
         `- *Ekspektasi Pro-Rata (Hari ke-${dayOfYear})*: ${formatRp(expectedRealisasi)}\n` +
         `- *Realisasi Aktual*: ${formatRp(realisasiTotal)}\n` +
         `- *Selisih/Kekurangan*: ${formatRp(expectedRealisasi - realisasiTotal)}\n\n` +
+        `*⚠️Atas kekurangan tersebut, mohon dijadikan perhatian lebih.*\n\n` +
         `Mohon segera ditindaklanjuti dengan opsi strategi pemungutan sebagai berikut.\n\n` +
         `👉 *LIHAT REKOMENDASI TINDAKAN DI SINI:*\n` +
         `${process.env.PUBLIC_URL || "http://localhost:5000"}/rekomendasi\n\nTerima kasih.`;
     } else {
       emailSubject = "Laporan Evaluasi SIOPTIMA - Target Aman";
       message =
-        `✅*Laporan SIOPTIMA - Capaian Realisasi Opsen*✅\n\n` +
+        `✅*Laporan SIOPTIMA - Capaian Realisasi Opsen*\n\n` +
         `Yth. Bapak dan Ibu yang berwenang dalam pemungutan opsen pajak daerah,\n\n` +
-        `Selamat! Bahwa sistem mendeteksi capaian *Realisasi Total Opsen* saat ini dalam kondisi AMAN dan telah memenuhi ambang batas *Pro-Rata* yang diharapkan hingga hari ini.\n\n` +
+        `Selamat👏👏 Bahwa sistem mendeteksi capaian *Realisasi Total Opsen* saat ini dalam kondisi AMAN dan telah memenuhi ambang batas *Pro-Rata* yang diharapkan hingga hari ini.\n\n` +
         `- *Ekspektasi Pro-Rata (Hari ke-${dayOfYear})*: ${formatRp(expectedRealisasi)}\n` +
         `- *Realisasi Aktual*: ${formatRp(realisasiTotal)}\n` +
         `- *Surplus/Kelebihan*: ${formatRp(realisasiTotal - expectedRealisasi)}\n\n` +

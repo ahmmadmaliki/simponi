@@ -1058,20 +1058,21 @@ app.get("/api/template/realisasi", (req, res) =>
     ])
   );
 
-// Manual Trigger for Notification Testing
-app.get("/api/test-notification", async (req, res) => {
-  try {
-    await evaluateTargets();
-    res.json({
-      message:
-        "Evaluasi paksa (Force Evaluation) telah dijalankan. Periksa log terminal backend untuk detail QR WA dan URL Email.",
-    });
-  } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Terjadi kesalahan saat memicu evaluasi." });
-  }
-});
+  // Manual Trigger for Notification Testing
+  app.get("/api/test-notification", async (req, res) => {
+    try {
+      const { status } = req.query; // can be "aman" or "peringatan"
+      await evaluateTargets(status);
+      res.json({
+        message:
+          `Evaluasi paksa (Force Evaluation${status ? ` - status: ${status}` : ''}) telah dijalankan. Periksa log terminal backend untuk detail QR WA dan URL Email.`,
+      });
+    } catch (error) {
+      res
+        .status(500)
+        .json({ message: "Terjadi kesalahan saat memicu evaluasi." });
+    }
+  });
 
 // --- REKOMENDASI TINDAKAN API ---
   app.get("/api/rekomendasi", async (req, res) => {
